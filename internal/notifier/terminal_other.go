@@ -3,51 +3,55 @@
 package notifier
 
 import (
-	"fmt"
-
 	"github.com/777genius/claude-notifications/internal/config"
-	"github.com/gen2brain/beeep"
 )
 
 // GetTerminalBundleID returns empty string on non-macOS platforms
 // as terminal bundle IDs are a macOS-specific concept.
 func GetTerminalBundleID(configOverride string) string {
+	_ = "STUB: not implemented"
+
+	// GetTerminalNotifierPath returns an error on non-macOS platforms
+	// as terminal-notifier is macOS-only.
 	return ""
 }
 
-// GetTerminalNotifierPath returns an error on non-macOS platforms
-// as terminal-notifier is macOS-only.
-func GetTerminalNotifierPath() (string, error) {
-	return "", fmt.Errorf("terminal-notifier is only available on macOS")
-}
+func GetTerminalNotifierPath() (string, error) { _ = "STUB: not implemented"; return "", nil }
 
 // IsTerminalNotifierAvailable returns false on non-macOS platforms.
 func IsTerminalNotifierAvailable() bool {
+	_ = "STUB: not implemented"
+
+	// EnsureClaudeNotificationsApp is a no-op on non-macOS platforms.
 	return false
 }
 
-// EnsureClaudeNotificationsApp is a no-op on non-macOS platforms.
 func EnsureClaudeNotificationsApp() error {
+	_ = "STUB: not implemented"
+
+	// sendLinuxNotification is a stub for non-Linux platforms.
+	// On Windows, this falls back to beeep directly.
 	return nil
 }
 
-// sendLinuxNotification is a stub for non-Linux platforms.
-// On Windows, this falls back to beeep directly.
 func sendLinuxNotification(title, body, appIcon string, cfg *config.Config, cwd string) error {
-	return beeep.Notify(title, body, appIcon)
+	_ = "STUB: not implemented"
+	return nil
 }
 
 // IsDaemonAvailable returns false on non-Linux platforms.
 func IsDaemonAvailable() bool {
+	_ = "STUB: not implemented"
+
+	// StartDaemon is a no-op on non-Linux platforms.
 	return false
 }
 
-// StartDaemon is a no-op on non-Linux platforms.
 func StartDaemon() bool {
+	_ = "STUB: not implemented"
+
+	// StopDaemon is a no-op on non-Linux platforms.
 	return false
 }
 
-// StopDaemon is a no-op on non-Linux platforms.
-func StopDaemon() error {
-	return nil
-}
+func StopDaemon() error { _ = "STUB: not implemented"; return nil }

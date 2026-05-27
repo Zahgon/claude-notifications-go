@@ -1,15 +1,5 @@
 package config
 
-import (
-	"encoding/json"
-	"fmt"
-	"os"
-	"path/filepath"
-
-	"github.com/777genius/claude-notifications/internal/logging"
-	"github.com/777genius/claude-notifications/internal/platform"
-)
-
 // Config represents the plugin configuration
 type Config struct {
 	Notifications NotificationsConfig   `json:"notifications"`
@@ -110,166 +100,57 @@ type SuppressFilter struct {
 
 // Matches returns true if all specified fields match the given values.
 func (f *SuppressFilter) Matches(status, gitBranch, folder string) bool {
-	if f.Status != nil && *f.Status != status {
-		return false
-	}
-	if f.GitBranch != nil && *f.GitBranch != gitBranch {
-		return false
-	}
-	if f.Folder != nil && *f.Folder != folder {
-		return false
-	}
-	return true
+	_ = "STUB: not implemented"
+	return false
 }
 
 // HasConditions returns true if the filter has at least one condition field set.
-func (f *SuppressFilter) HasConditions() bool {
-	return f.Status != nil || f.GitBranch != nil || f.Folder != nil
-}
+func (f *SuppressFilter) HasConditions() bool { _ = "STUB: not implemented"; return false }
 
 // intPtr returns a pointer to the given int value
 func intPtr(v int) *int {
-	return &v
+	_ = "STUB: not implemented"
+
+	// stringPtr returns a pointer to the given string value
+	return nil
 }
 
-// stringPtr returns a pointer to the given string value
-func stringPtr(v string) *string {
-	return &v
-}
+func stringPtr(v string) *string { _ = "STUB: not implemented"; return nil }
 
 const defaultSuppressQuestionAfterAnyNotificationSeconds = 7
 
 // DefaultConfig returns a config with sensible defaults
 func DefaultConfig() *Config {
+	_ = "STUB: not implemented"
 	// Get plugin root from environment, fallback to current directory
-	pluginRoot := platform.ExpandEnv("${CLAUDE_PLUGIN_ROOT}")
-	if pluginRoot == "" || pluginRoot == "${CLAUDE_PLUGIN_ROOT}" {
-		pluginRoot = "."
-	}
-
-	return &Config{
-		Notifications: NotificationsConfig{
-			Desktop: DesktopConfig{
-				Enabled:      true,
-				Sound:        true,
-				Volume:       1.0, // Full volume by default
-				AppIcon:      filepath.Join(pluginRoot, "claude_icon.png"),
-				ClickToFocus: true, // macOS: activate terminal on click (default: enabled)
-				// TerminalBundleID: "" - empty means auto-detect
-			},
-			Webhook: WebhookConfig{
-				Enabled:       false,
-				Preset:        "custom",
-				URL:           "",
-				ChatID:        "",
-				Format:        "json",
-				Headers:       make(map[string]string),
-				PayloadFields: make(map[string]interface{}),
-				Retry: RetryConfig{
-					Enabled:        true,
-					MaxAttempts:    3,
-					InitialBackoff: "1s",
-					MaxBackoff:     "10s",
-				},
-				CircuitBreaker: CircuitBreakerConfig{
-					Enabled:          true,
-					FailureThreshold: 5,
-					Timeout:          "30s",
-					SuccessThreshold: 2,
-				},
-				RateLimit: RateLimitConfig{
-					Enabled:           true,
-					RequestsPerMinute: 10,
-				},
-			},
-			SuppressQuestionAfterTaskCompleteSeconds:    intPtr(12),
-			SuppressQuestionAfterAnyNotificationSeconds: intPtr(defaultSuppressQuestionAfterAnyNotificationSeconds),
-		},
-		Statuses: map[string]StatusInfo{
-			"task_complete": {
-				Title: "✅ Completed",
-				Sound: filepath.Join(pluginRoot, "sounds", "task-complete.mp3"),
-			},
-			"review_complete": {
-				Title: "🔍 Review",
-				Sound: filepath.Join(pluginRoot, "sounds", "review-complete.mp3"),
-			},
-			"question": {
-				Title: "❓ Question",
-				Sound: filepath.Join(pluginRoot, "sounds", "question.mp3"),
-			},
-			"plan_ready": {
-				Title: "📋 Plan",
-				Sound: filepath.Join(pluginRoot, "sounds", "plan-ready.mp3"),
-			},
-			"session_limit_reached": {
-				Title: "⏱️ Session Limit Reached",
-				Sound: filepath.Join(pluginRoot, "sounds", "error.mp3"),
-			},
-			"api_error": {
-				Title: "🔴 API Error: 401",
-				Sound: filepath.Join(pluginRoot, "sounds", "error.mp3"),
-			},
-			"api_error_overloaded": {
-				Title: "🔴 API Error",
-				Sound: filepath.Join(pluginRoot, "sounds", "error.mp3"),
-			},
-		},
-	}
+	return nil
 }
+
+// Full volume by default
+
+// macOS: activate terminal on click (default: enabled)
+// TerminalBundleID: "" - empty means auto-detect
 
 // Load loads configuration from a file
 // If the file doesn't exist, returns default config
 func Load(path string) (*Config, error) {
+	_ = "STUB: not implemented"
 	// If path doesn't exist, use default config
-	if !platform.FileExists(path) {
-		return DefaultConfig(), nil
-	}
-
-	data, err := os.ReadFile(path)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read config file: %w", err)
-	}
-
-	config := DefaultConfig()
-	if err := json.Unmarshal(data, config); err != nil {
-		return nil, fmt.Errorf("failed to parse config file: %w", err)
-	}
-
-	// Expand environment variables in paths
-	config.Notifications.Desktop.AppIcon = platform.ExpandEnv(config.Notifications.Desktop.AppIcon)
-	config.Notifications.Webhook.URL = platform.ExpandEnv(config.Notifications.Webhook.URL)
-
-	// Expand environment variables in sound paths
-	for status, info := range config.Statuses {
-		info.Sound = platform.ExpandEnv(info.Sound)
-		config.Statuses[status] = info
-	}
-
-	// Apply defaults for missing fields
-	config.ApplyDefaults()
-
-	return config, nil
+	return nil, nil
 }
+
+// Expand environment variables in paths
+
+// Expand environment variables in sound paths
+
+// Apply defaults for missing fields
 
 // GetStableConfigDir returns the stable config directory outside the plugin cache.
 // This directory survives plugin updates (bootstrap.sh rm -rf of cache).
-func GetStableConfigDir() (string, error) {
-	home, err := os.UserHomeDir()
-	if err != nil {
-		return "", fmt.Errorf("cannot determine home directory: %w", err)
-	}
-	return filepath.Join(home, ".claude", "claude-notifications-go"), nil
-}
+func GetStableConfigDir() (string, error) { _ = "STUB: not implemented"; return "", nil }
 
 // GetStableConfigPath returns the stable config file path outside the plugin cache.
-func GetStableConfigPath() (string, error) {
-	dir, err := GetStableConfigDir()
-	if err != nil {
-		return "", err
-	}
-	return filepath.Join(dir, "config.json"), nil
-}
+func GetStableConfigPath() (string, error) { _ = "STUB: not implemented"; return "", nil }
 
 // LoadFromPluginRoot loads configuration with a resilient fallback chain:
 // 1. Stable path (~/.claude/claude-notifications-go/config.json) — preferred
@@ -279,365 +160,155 @@ func GetStableConfigPath() (string, error) {
 // Corrupted config files are non-fatal: a warning is printed to stderr and
 // logged, then the next source in the chain is tried.
 func LoadFromPluginRoot(pluginRoot string) (*Config, error) {
+	_ = "STUB: not implemented"
 	// 1. Try stable path
-	stablePath, stableErr := GetStableConfigPath()
-	if stableErr != nil {
-		msg := fmt.Sprintf("warning: cannot resolve stable config path: %v, using legacy path only", stableErr)
-		fmt.Fprintln(os.Stderr, msg)
-		logging.Warn("%s", msg)
-	}
-	if stableErr == nil {
-		if platform.FileExists(stablePath) {
-			cfg, err := Load(stablePath)
-			if err != nil {
-				// Corrupted stable config — warn and fall through to old path
-				msg := fmt.Sprintf("warning: failed to load config from %s: %v, trying legacy path", stablePath, err)
-				fmt.Fprintln(os.Stderr, msg)
-				logging.Warn("%s", msg)
-			} else {
-				return cfg, nil
-			}
-		}
-	}
-
-	// 2. Try old path (pluginRoot/config/config.json)
-	oldPath := filepath.Join(pluginRoot, "config", "config.json")
-	if platform.FileExists(oldPath) {
-		cfg, err := Load(oldPath)
-		if err != nil {
-			// Corrupted old config — warn, return defaults (non-fatal)
-			msg := fmt.Sprintf("warning: corrupted config at %s, using defaults", oldPath)
-			fmt.Fprintln(os.Stderr, msg)
-			logging.Warn("%s", msg)
-			return DefaultConfig(), nil
-		}
-
-		// Migrate to stable path (best-effort)
-		if stableErr == nil && stablePath != "" {
-			if migErr := migrateConfig(oldPath, stablePath); migErr != nil {
-				msg := fmt.Sprintf("warning: config migration failed: %v", migErr)
-				fmt.Fprintln(os.Stderr, msg)
-				logging.Warn("%s", msg)
-			}
-		}
-
-		return cfg, nil
-	}
-
-	// 3. Neither path has config — return defaults
-	return DefaultConfig(), nil
+	return nil, nil
 }
+
+// Corrupted stable config — warn and fall through to old path
+
+// 2. Try old path (pluginRoot/config/config.json)
+
+// Corrupted old config — warn, return defaults (non-fatal)
+
+// Migrate to stable path (best-effort)
+
+// 3. Neither path has config — return defaults
 
 // migrateConfig copies config from oldPath to stablePath atomically.
 // Uses temp file + rename in the same directory for safe atomic write.
-func migrateConfig(oldPath, stablePath string) error {
-	data, err := os.ReadFile(oldPath)
-	if err != nil {
-		return err
-	}
+func migrateConfig(oldPath, stablePath string) error { _ = "STUB: not implemented"; return nil }
 
-	dir := filepath.Dir(stablePath)
-	if err := os.MkdirAll(dir, 0700); err != nil {
-		return err
-	}
+// Create temp file in same dir — guarantees same filesystem for safe os.Rename
 
-	// Create temp file in same dir — guarantees same filesystem for safe os.Rename
-	tmpFile, err := os.CreateTemp(dir, "config-*.json.tmp")
-	if err != nil {
-		return err
-	}
-	tmpPath := tmpFile.Name()
-	defer os.Remove(tmpPath) // cleanup on any error path
-
-	if _, err := tmpFile.Write(data); err != nil {
-		tmpFile.Close()
-		return err
-	}
-	if err := tmpFile.Sync(); err != nil {
-		tmpFile.Close()
-		return err
-	}
-	if err := tmpFile.Close(); err != nil {
-		return err
-	}
-	if err := os.Chmod(tmpPath, 0600); err != nil {
-		return err
-	}
-	return os.Rename(tmpPath, stablePath)
-}
+// cleanup on any error path
 
 // ApplyDefaults fills in missing fields with default values
 func (c *Config) ApplyDefaults() {
+	_ = "STUB: not implemented"
 	// Desktop defaults
-	if c.Notifications.Desktop.Volume == 0 {
-		c.Notifications.Desktop.Volume = 1.0 // Default to full volume
-	}
-	// AppIcon: Keep empty if not set (no default)
-
-	// Webhook defaults
-	if c.Notifications.Webhook.Preset == "" {
-		c.Notifications.Webhook.Preset = "custom"
-	}
-	if c.Notifications.Webhook.Format == "" {
-		c.Notifications.Webhook.Format = "json"
-	}
-	if c.Notifications.Webhook.Headers == nil {
-		c.Notifications.Webhook.Headers = make(map[string]string)
-	}
-	if c.Notifications.Webhook.PayloadFields == nil {
-		c.Notifications.Webhook.PayloadFields = make(map[string]interface{})
-	}
-
-	// Cooldown defaults (nil = not set in config, apply defaults)
-	if c.Notifications.SuppressQuestionAfterTaskCompleteSeconds == nil {
-		c.Notifications.SuppressQuestionAfterTaskCompleteSeconds = intPtr(12)
-	}
-	if c.Notifications.SuppressQuestionAfterAnyNotificationSeconds == nil {
-		c.Notifications.SuppressQuestionAfterAnyNotificationSeconds = intPtr(defaultSuppressQuestionAfterAnyNotificationSeconds)
-	}
-
-	// Status defaults
-	defaults := DefaultConfig()
-	if c.Statuses == nil {
-		c.Statuses = defaults.Statuses
-	} else {
-		// Fill in missing statuses
-		for key, val := range defaults.Statuses {
-			if _, exists := c.Statuses[key]; !exists {
-				c.Statuses[key] = val
-			}
-		}
-	}
+	return
 }
+
+// Default to full volume
+
+// AppIcon: Keep empty if not set (no default)
+
+// Webhook defaults
+
+// Cooldown defaults (nil = not set in config, apply defaults)
+
+// Status defaults
+
+// Fill in missing statuses
 
 // Validate validates the configuration
 func (c *Config) Validate() error {
+	_ = "STUB: not implemented"
 	// Validate volume
-	if c.Notifications.Desktop.Volume < 0.0 || c.Notifications.Desktop.Volume > 1.0 {
-		return fmt.Errorf("desktop volume must be between 0.0 and 1.0 (got %.2f)", c.Notifications.Desktop.Volume)
-	}
-
-	// Validate webhook preset (only if webhooks are enabled)
-	validPresets := map[string]bool{
-		"slack":    true,
-		"discord":  true,
-		"telegram": true,
-		"lark":     true,
-		"custom":   true,
-	}
-	if c.Notifications.Webhook.Enabled && !validPresets[c.Notifications.Webhook.Preset] {
-		return fmt.Errorf("invalid webhook preset: %s (must be one of: slack, discord, telegram, lark, custom)", c.Notifications.Webhook.Preset)
-	}
-
-	// Validate webhook format (only if webhooks are enabled)
-	validFormats := map[string]bool{
-		"json": true,
-		"text": true,
-	}
-	if c.Notifications.Webhook.Enabled && !validFormats[c.Notifications.Webhook.Format] {
-		return fmt.Errorf("invalid webhook format: %s (must be one of: json, text)", c.Notifications.Webhook.Format)
-	}
-
-	if c.Notifications.Webhook.Enabled &&
-		c.Notifications.Webhook.Preset == "custom" &&
-		c.Notifications.Webhook.Format == "text" &&
-		len(c.Notifications.Webhook.PayloadFields) > 0 {
-		return fmt.Errorf("webhook payloadFields require json format when using custom preset")
-	}
-
-	// Validate webhook URL if enabled
-	if c.Notifications.Webhook.Enabled && c.Notifications.Webhook.URL == "" {
-		return fmt.Errorf("webhook URL is required when webhooks are enabled")
-	}
-
-	// Validate Telegram chat_id if Telegram preset is used
-	if c.Notifications.Webhook.Enabled && c.Notifications.Webhook.Preset == "telegram" && c.Notifications.Webhook.ChatID == "" {
-		return fmt.Errorf("chat_id is required for Telegram webhook")
-	}
-
-	// Validate cooldowns (both fields, if explicitly set)
-	if c.Notifications.SuppressQuestionAfterTaskCompleteSeconds != nil && *c.Notifications.SuppressQuestionAfterTaskCompleteSeconds < 0 {
-		return fmt.Errorf("suppressQuestionAfterTaskCompleteSeconds must be >= 0")
-	}
-	if c.Notifications.SuppressQuestionAfterAnyNotificationSeconds != nil && *c.Notifications.SuppressQuestionAfterAnyNotificationSeconds < 0 {
-		return fmt.Errorf("suppressQuestionAfterAnyNotificationSeconds must be >= 0")
-	}
-
-	// Validate teamMode
-	validTeamModes := map[string]bool{"": true, "wait-all": true, "always": true, "never": true}
-	if !validTeamModes[c.Notifications.TeamMode] {
-		return fmt.Errorf("invalid teamMode %q (must be one of: always, wait-all, never)", c.Notifications.TeamMode)
-	}
-
-	// Validate suppress-filters
-	validStatuses := map[string]bool{
-		"task_complete":         true,
-		"review_complete":       true,
-		"question":              true,
-		"plan_ready":            true,
-		"session_limit_reached": true,
-		"api_error":             true,
-		"api_error_overloaded":  true,
-	}
-	for i, f := range c.Notifications.SuppressFilters {
-		if !f.HasConditions() {
-			return fmt.Errorf("suppressFilters[%d]: must have at least one condition (status, gitBranch, or folder)", i)
-		}
-		if f.Status != nil && !validStatuses[*f.Status] {
-			return fmt.Errorf("suppressFilters[%d]: invalid status %q", i, *f.Status)
-		}
-	}
-
 	return nil
 }
 
+// Validate webhook preset (only if webhooks are enabled)
+
+// Validate webhook format (only if webhooks are enabled)
+
+// Validate webhook URL if enabled
+
+// Validate Telegram chat_id if Telegram preset is used
+
+// Validate cooldowns (both fields, if explicitly set)
+
+// Validate teamMode
+
+// Validate suppress-filters
+
 // GetStatusInfo returns status information for a given status
 func (c *Config) GetStatusInfo(status string) (StatusInfo, bool) {
-	info, exists := c.Statuses[status]
-	return info, exists
+	_ = "STUB: not implemented"
+	return *new(StatusInfo), false
 }
 
 // IsDesktopEnabled returns true if desktop notifications are enabled
-func (c *Config) IsDesktopEnabled() bool {
-	return c.Notifications.Desktop.Enabled
-}
+func (c *Config) IsDesktopEnabled() bool { _ = "STUB: not implemented"; return false }
 
 // IsWebhookEnabled returns true if webhook notifications are enabled
-func (c *Config) IsWebhookEnabled() bool {
-	return c.Notifications.Webhook.Enabled
-}
+func (c *Config) IsWebhookEnabled() bool { _ = "STUB: not implemented"; return false }
 
 // IsAnyNotificationEnabled returns true if at least one notification method is enabled
-func (c *Config) IsAnyNotificationEnabled() bool {
-	return c.IsDesktopEnabled() || c.IsWebhookEnabled()
-}
+func (c *Config) IsAnyNotificationEnabled() bool { _ = "STUB: not implemented"; return false }
 
 // GetSuppressQuestionAfterTaskCompleteSeconds returns the cooldown in seconds
 // after task completion before question notifications are allowed (default: 12)
 func (c *Config) GetSuppressQuestionAfterTaskCompleteSeconds() int {
-	if c.Notifications.SuppressQuestionAfterTaskCompleteSeconds == nil {
-		return 12
-	}
-	return *c.Notifications.SuppressQuestionAfterTaskCompleteSeconds
+	_ = "STUB: not implemented"
+	return 0
 }
 
 // GetSuppressQuestionAfterAnyNotificationSeconds returns the cooldown in seconds
 // after any notification before question notifications are allowed (default: 7).
 func (c *Config) GetSuppressQuestionAfterAnyNotificationSeconds() int {
-	if c.Notifications.SuppressQuestionAfterAnyNotificationSeconds == nil {
-		return defaultSuppressQuestionAfterAnyNotificationSeconds
-	}
-	return *c.Notifications.SuppressQuestionAfterAnyNotificationSeconds
+	_ = "STUB: not implemented"
+	return 0
 }
 
 // ShouldNotifyOnTextResponse returns true if notifications should be sent for text-only responses (default: true)
-func (c *Config) ShouldNotifyOnTextResponse() bool {
-	if c.Notifications.NotifyOnTextResponse == nil {
-		return true // Default: notify on text responses
-	}
-	return *c.Notifications.NotifyOnTextResponse
-}
+func (c *Config) ShouldNotifyOnTextResponse() bool { _ = "STUB: not implemented"; return false }
+
+// Default: notify on text responses
 
 // ShouldSuppressForSubagents returns true if notifications should be suppressed
 // when transcript_path contains /subagents/ (default: true)
-func (c *Config) ShouldSuppressForSubagents() bool {
-	if c.Notifications.SuppressForSubagents == nil {
-		return true // Default: suppress subagent notifications
-	}
-	return *c.Notifications.SuppressForSubagents
-}
+func (c *Config) ShouldSuppressForSubagents() bool { _ = "STUB: not implemented"; return false }
+
+// Default: suppress subagent notifications
 
 // IsBenchmarkEnabled returns true if benchmark timing is enabled via config
-func (c *Config) IsBenchmarkEnabled() bool {
-	return c.Debug.Benchmark
-}
+func (c *Config) IsBenchmarkEnabled() bool { _ = "STUB: not implemented"; return false }
 
 // ShouldRespectJudgeMode returns true if CLAUDE_HOOK_JUDGE_MODE=true env var should suppress notifications (default: true)
-func (c *Config) ShouldRespectJudgeMode() bool {
-	if c.Notifications.RespectJudgeMode == nil {
-		return true // Default: respect judge mode
-	}
-	return *c.Notifications.RespectJudgeMode
-}
+func (c *Config) ShouldRespectJudgeMode() bool { _ = "STUB: not implemented"; return false }
+
+// Default: respect judge mode
 
 // GetTeamMode returns the team notification mode: "always" (default), "wait-all", or "never"
-func (c *Config) GetTeamMode() string {
-	switch c.Notifications.TeamMode {
-	case "wait-all", "never":
-		return c.Notifications.TeamMode
-	default:
-		return "always"
-	}
-}
+func (c *Config) GetTeamMode() string { _ = "STUB: not implemented"; return "" }
 
 // IsStatusEnabled returns true if notifications for this status are enabled
 // Returns true by default (if Enabled is nil or not specified) for backward compatibility
-func (c *Config) IsStatusEnabled(status string) bool {
-	info, exists := c.Statuses[status]
-	if !exists {
-		return true // unknown statuses are enabled by default
-	}
-	if info.Enabled == nil {
-		return true // nil means enabled (backward compatibility)
-	}
-	return *info.Enabled
-}
+func (c *Config) IsStatusEnabled(status string) bool { _ = "STUB: not implemented"; return false }
+
+// unknown statuses are enabled by default
+
+// nil means enabled (backward compatibility)
 
 func isStatusChannelEnabled(channel *StatusChannelConfig) bool {
-	if channel == nil || channel.Enabled == nil {
-		return true
-	}
-	return *channel.Enabled
+	_ = "STUB: not implemented"
+	return false
 }
 
 // IsTerminalBellEnabled returns true if terminal bell (BEL) should be sent (default: true)
-func (c *Config) IsTerminalBellEnabled() bool {
-	if c.Notifications.Desktop.TerminalBell == nil {
-		return true // Default: enabled
-	}
-	return *c.Notifications.Desktop.TerminalBell
-}
+func (c *Config) IsTerminalBellEnabled() bool { _ = "STUB: not implemented"; return false }
+
+// Default: enabled
 
 // IsStatusDesktopEnabled returns true if desktop notifications for this status are enabled
 // Considers global desktop.enabled, per-status enabled, and per-channel desktop override.
 func (c *Config) IsStatusDesktopEnabled(status string) bool {
-	if !c.IsDesktopEnabled() || !c.IsStatusEnabled(status) {
-		return false
-	}
-
-	info, exists := c.Statuses[status]
-	if !exists {
-		return true
-	}
-
-	return isStatusChannelEnabled(info.Desktop)
+	_ = "STUB: not implemented"
+	return false
 }
 
 // IsStatusWebhookEnabled returns true if webhook notifications for this status are enabled
 // Considers global webhook.enabled, per-status enabled, and per-channel webhook override.
 func (c *Config) IsStatusWebhookEnabled(status string) bool {
-	if !c.IsWebhookEnabled() || !c.IsStatusEnabled(status) {
-		return false
-	}
-
-	info, exists := c.Statuses[status]
-	if !exists {
-		return true
-	}
-
-	return isStatusChannelEnabled(info.Webhook)
+	_ = "STUB: not implemented"
+	return false
 }
 
 // ShouldFilter returns true if any suppress-filter rule matches the given context.
 // When true, the notification should be suppressed entirely (both desktop and webhook).
 func (c *Config) ShouldFilter(status, gitBranch, folder string) bool {
-	for i := range c.Notifications.SuppressFilters {
-		if !c.Notifications.SuppressFilters[i].HasConditions() {
-			continue
-		}
-		if c.Notifications.SuppressFilters[i].Matches(status, gitBranch, folder) {
-			return true
-		}
-	}
+	_ = "STUB: not implemented"
 	return false
 }

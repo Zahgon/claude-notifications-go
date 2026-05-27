@@ -1,14 +1,8 @@
 package webhook
 
 import (
-	"fmt"
-	"strings"
-	"time"
-
 	"github.com/777genius/claude-notifications/internal/analyzer"
 	"github.com/777genius/claude-notifications/internal/config"
-	"github.com/777genius/claude-notifications/internal/logging"
-	"github.com/777genius/claude-notifications/internal/sessionname"
 )
 
 const (
@@ -29,21 +23,8 @@ type Formatter interface {
 type SlackFormatter struct{}
 
 func (f *SlackFormatter) Format(ctx SendContext, statusInfo config.StatusInfo) (interface{}, error) {
-	color := getColorForStatus(ctx.Status)
-
-	return map[string]interface{}{
-		"attachments": []map[string]interface{}{
-			{
-				"color":       color,
-				"title":       statusInfo.Title,
-				"text":        ctx.Message,
-				"footer":      fmt.Sprintf("Session: %s | Claude Notifications", ctx.SessionID),
-				"footer_icon": "https://claude.ai/favicon.ico",
-				"ts":          time.Now().Unix(),
-				"mrkdwn_in":   []string{"text"},
-			},
-		},
-	}, nil
+	_ = "STUB: not implemented"
+	return nil, nil
 }
 
 // DiscordFormatter formats messages for Discord using native embed structure:
@@ -51,38 +32,11 @@ func (f *SlackFormatter) Format(ctx SendContext, statusInfo config.StatusInfo) (
 type DiscordFormatter struct{}
 
 func (f *DiscordFormatter) Format(ctx SendContext, statusInfo config.StatusInfo) (interface{}, error) {
-	embed := map[string]interface{}{
-		"title":     statusInfo.Title,
-		"color":     getDiscordColorInt(ctx.Status),
-		"timestamp": time.Now().Format(time.RFC3339),
-	}
-
-	if author := buildDiscordAuthor(ctx); author != "" {
-		embed["author"] = map[string]interface{}{"name": author}
-	}
-
-	description := strings.TrimSpace(ctx.RawBody)
-	if description == "" {
-		// Fallback for callers that haven't populated structured fields yet.
-		description = ctx.Message
-	}
-	if description != "" {
-		embed["description"] = description
-	}
-
-	if fields := parseActionSummary(ctx.ActionSummary); len(fields) > 0 {
-		embed["fields"] = fields
-	}
-
-	embed["footer"] = map[string]interface{}{
-		"text": buildDiscordFooter(ctx),
-	}
-
-	return map[string]interface{}{
-		"username": "Claude Code",
-		"embeds":   []map[string]interface{}{embed},
-	}, nil
+	_ = "STUB: not implemented"
+	return nil, nil
 }
+
+// Fallback for callers that haven't populated structured fields yet.
 
 // buildDiscordAuthor returns the embed author line, e.g.:
 //
@@ -91,57 +45,16 @@ func (f *DiscordFormatter) Format(ctx SendContext, statusInfo config.StatusInfo)
 //	"phoenix 439d1884"                      // no folder either
 //
 // Returns "" when no session-derived label is available.
-func buildDiscordAuthor(ctx SendContext) string {
-	name := ctx.SessionName
-	if name == "" && ctx.SessionID != "" {
-		name = sessionname.GenerateSessionLabel(ctx.SessionID)
-	}
-	if name == "" {
-		return ""
-	}
-
-	parts := []string{name}
-	if ctx.Folder != "" {
-		parts = append(parts, ctx.Folder)
-	}
-	author := strings.Join(parts, " · ")
-	if ctx.GitBranch != "" {
-		author += fmt.Sprintf(" (%s)", ctx.GitBranch)
-	}
-	return truncateMiddle(author, discordEmbedAuthorLimit)
-}
+func buildDiscordAuthor(ctx SendContext) string { _ = "STUB: not implemented"; return "" }
 
 // buildDiscordFooter returns the embed footer text.
 // Uses the raw session UUID so the footer is not redundant with the friendly
 // label that already appears in the author line.
-func buildDiscordFooter(ctx SendContext) string {
-	if ctx.SessionID == "" {
-		return "Claude Code"
-	}
-	return truncateMiddle(fmt.Sprintf("Session: %s · Claude Code", ctx.SessionID), discordEmbedFooterLimit)
-}
+func buildDiscordFooter(ctx SendContext) string { _ = "STUB: not implemented"; return "" }
 
 // truncateMiddle keeps both the start and end of a string visible while
 // enforcing a hard character limit for Discord embed fields.
-func truncateMiddle(s string, limit int) string {
-	runes := []rune(s)
-	if len(runes) <= limit || limit <= 0 {
-		return s
-	}
-	if limit == 1 {
-		return string(runes[:1])
-	}
-	if limit == 2 {
-		return ".."
-	}
-
-	const ellipsis = "..."
-	available := limit - len([]rune(ellipsis))
-	head := available / 2
-	tail := available - head
-
-	return string(runes[:head]) + ellipsis + string(runes[len(runes)-tail:])
-}
+func truncateMiddle(s string, limit int) string { _ = "STUB: not implemented"; return "" }
 
 // actionEmojiField maps the leading emoji of an action segment to a field name.
 // Keep in sync with summary.buildActionsString.
@@ -159,57 +72,10 @@ var actionEmojiField = []struct {
 // "📝 1 new  ▶ 2 cmds  ⏱ 41s") into Discord embed fields. Unknown segments are
 // collected into a single "Details" field so future emoji additions never lose
 // information.
-func parseActionSummary(s string) []map[string]interface{} {
-	s = strings.TrimSpace(s)
-	if s == "" {
-		return nil
-	}
+func parseActionSummary(s string) []map[string]interface{} { _ = "STUB: not implemented"; return nil }
 
-	segments := strings.Split(s, "  ")
-	fields := make([]map[string]interface{}, 0, len(segments))
-	var unknown []string
-
-	for _, seg := range segments {
-		seg = strings.TrimSpace(seg)
-		if seg == "" {
-			continue
-		}
-
-		matched := false
-		for _, m := range actionEmojiField {
-			if strings.HasPrefix(seg, m.prefix) {
-				value := strings.TrimSpace(strings.TrimPrefix(seg, m.prefix))
-				if value == "" {
-					// Discord rejects fields with empty value (HTTP 400). Skip
-					// segments that have no payload after their emoji prefix.
-					matched = true
-					break
-				}
-				fields = append(fields, map[string]interface{}{
-					"name":   m.name,
-					"value":  value,
-					"inline": true,
-				})
-				matched = true
-				break
-			}
-		}
-		if !matched {
-			unknown = append(unknown, seg)
-		}
-	}
-
-	if len(unknown) > 0 {
-		logging.Debug("Discord embed: unknown action segments %v", unknown)
-		fields = append(fields, map[string]interface{}{
-			"name":   "Details",
-			"value":  strings.Join(unknown, " "),
-			"inline": true,
-		})
-	}
-
-	return fields
-}
+// Discord rejects fields with empty value (HTTP 400). Skip
+// segments that have no payload after their emoji prefix.
 
 // TelegramFormatter formats messages for Telegram with HTML
 type TelegramFormatter struct {
@@ -217,117 +83,46 @@ type TelegramFormatter struct {
 }
 
 func (f *TelegramFormatter) Format(ctx SendContext, statusInfo config.StatusInfo) (interface{}, error) {
-	emoji := getEmojiForStatus(ctx.Status)
-	text := fmt.Sprintf("<b>%s %s</b>\n\n%s\n\n<i>Session: %s</i>",
-		emoji, statusInfo.Title, ctx.Message, ctx.SessionID)
-
-	return map[string]interface{}{
-		"chat_id":    f.ChatID,
-		"text":       text,
-		"parse_mode": "HTML",
-	}, nil
+	_ = "STUB: not implemented"
+	return nil, nil
 }
 
 // getColorForStatus returns color hex code for status (Slack)
-func getColorForStatus(status analyzer.Status) string {
-	switch status {
-	case analyzer.StatusTaskComplete:
-		return "#28a745" // Green
-	case analyzer.StatusReviewComplete:
-		return "#17a2b8" // Teal
-	case analyzer.StatusQuestion:
-		return "#ffc107" // Yellow/Orange
-	case analyzer.StatusPlanReady:
-		return "#007bff" // Blue
-	default:
-		return "#6c757d" // Gray
-	}
-}
+func getColorForStatus(status analyzer.Status) string { _ = "STUB: not implemented"; return "" }
+
+// Green
+
+// Teal
+
+// Yellow/Orange
+
+// Blue
+
+// Gray
 
 // getDiscordColorInt returns Discord color integer for status
-func getDiscordColorInt(status analyzer.Status) int {
-	switch status {
-	case analyzer.StatusTaskComplete:
-		return 0x28a745 // Green
-	case analyzer.StatusReviewComplete:
-		return 0x17a2b8 // Teal
-	case analyzer.StatusQuestion:
-		return 0xffc107 // Yellow
-	case analyzer.StatusPlanReady:
-		return 0x007bff // Blue
-	default:
-		return 0x6c757d // Gray
-	}
-}
+func getDiscordColorInt(status analyzer.Status) int { _ = "STUB: not implemented"; return 0 }
+
+// Green
+
+// Teal
+
+// Yellow
+
+// Blue
+
+// Gray
 
 // getEmojiForStatus returns emoji for status (Telegram)
-func getEmojiForStatus(status analyzer.Status) string {
-	switch status {
-	case analyzer.StatusTaskComplete:
-		return "✅"
-	case analyzer.StatusReviewComplete:
-		return "🔍"
-	case analyzer.StatusQuestion:
-		return "❓"
-	case analyzer.StatusPlanReady:
-		return "📋"
-	default:
-		return "ℹ️"
-	}
-}
+func getEmojiForStatus(status analyzer.Status) string { _ = "STUB: not implemented"; return "" }
 
 // LarkFormatter formats messages for Feishu/Lark with interactive cards
 type LarkFormatter struct{}
 
 func (f *LarkFormatter) Format(ctx SendContext, statusInfo config.StatusInfo) (interface{}, error) {
-	return map[string]interface{}{
-		"msg_type": "interactive",
-		"card": map[string]interface{}{
-			"config": map[string]interface{}{
-				"wide_screen_mode": true,
-			},
-			"header": map[string]interface{}{
-				"title": map[string]interface{}{
-					"tag":     "plain_text",
-					"content": statusInfo.Title,
-				},
-				"template": getLarkColorTemplate(ctx.Status),
-			},
-			"elements": []map[string]interface{}{
-				{
-					"tag": "div",
-					"text": map[string]interface{}{
-						"tag":     "plain_text",
-						"content": ctx.Message,
-					},
-				},
-				{
-					"tag": "hr",
-				},
-				{
-					"tag": "div",
-					"text": map[string]interface{}{
-						"tag":     "plain_text",
-						"content": fmt.Sprintf("Session: %s", ctx.SessionID),
-					},
-				},
-			},
-		},
-	}, nil
+	_ = "STUB: not implemented"
+	return nil, nil
 }
 
 // getLarkColorTemplate returns Lark color template for status
-func getLarkColorTemplate(status analyzer.Status) string {
-	switch status {
-	case analyzer.StatusTaskComplete:
-		return "green"
-	case analyzer.StatusReviewComplete:
-		return "yellow"
-	case analyzer.StatusQuestion:
-		return "red"
-	case analyzer.StatusPlanReady:
-		return "blue"
-	default:
-		return "grey"
-	}
-}
+func getLarkColorTemplate(status analyzer.Status) string { _ = "STUB: not implemented"; return "" }

@@ -1,21 +1,13 @@
 package webhook
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
-	"fmt"
-	"io"
 	"net/http"
-	"net/url"
 	"sync"
 	"time"
 
 	"github.com/777genius/claude-notifications/internal/analyzer"
 	"github.com/777genius/claude-notifications/internal/config"
-	"github.com/777genius/claude-notifications/internal/errorhandler"
-	"github.com/777genius/claude-notifications/internal/logging"
-	"github.com/google/uuid"
 )
 
 // Sender sends webhook notifications with professional patterns
@@ -36,355 +28,140 @@ type Sender struct {
 
 // New creates a new professional webhook sender
 func New(cfg *config.Config) *Sender {
+	_ = "STUB: not implemented"
 	// Create base HTTP client with timeout
-	client := &http.Client{
-		Timeout: 10 * time.Second,
-	}
-
-	// Parse retry config
-	retryConfig := parseRetryConfig(cfg.Notifications.Webhook.Retry)
-	retry := NewRetryer(retryConfig)
-
-	// Parse circuit breaker config
-	cbCfg := cfg.Notifications.Webhook.CircuitBreaker
-	var circuitBreaker *CircuitBreaker
-	if cbCfg.Enabled {
-		timeout, _ := time.ParseDuration(cbCfg.Timeout)
-		if timeout == 0 {
-			timeout = 30 * time.Second
-		}
-		circuitBreaker = NewCircuitBreaker(cbCfg.FailureThreshold, cbCfg.SuccessThreshold, timeout)
-	}
-
-	// Create rate limiter
-	var rateLimiter *RateLimiter
-	if cfg.Notifications.Webhook.RateLimit.Enabled {
-		rateLimiter = NewRateLimiter(cfg.Notifications.Webhook.RateLimit.RequestsPerMinute)
-	}
-
-	// Create formatters
-	formatters := map[string]Formatter{
-		"slack":    &SlackFormatter{},
-		"discord":  &DiscordFormatter{},
-		"telegram": &TelegramFormatter{ChatID: cfg.Notifications.Webhook.ChatID},
-		"lark":     &LarkFormatter{},
-	}
-
-	// Create context for graceful shutdown
-	ctx, cancel := context.WithCancel(context.Background())
-
-	return &Sender{
-		cfg:            cfg,
-		client:         client,
-		retry:          retry,
-		circuitBreaker: circuitBreaker,
-		rateLimiter:    rateLimiter,
-		metrics:        NewMetrics(),
-		formatters:     formatters,
-		ctx:            ctx,
-		cancel:         cancel,
-	}
+	return nil
 }
+
+// Parse retry config
+
+// Parse circuit breaker config
+
+// Create rate limiter
+
+// Create formatters
+
+// Create context for graceful shutdown
 
 // Send sends a webhook notification with full professional stack.
 func (s *Sender) Send(status analyzer.Status, message, sessionID string) error {
-	return s.SendWithContext(SendContext{
-		Status:    status,
-		Message:   message,
-		SessionID: sessionID,
-	})
+	_ = "STUB: not implemented"
+	return nil
 }
 
 // SendWithContext sends a webhook notification with optional runtime context.
-func (s *Sender) SendWithContext(sendCtx SendContext) error {
-	if !s.cfg.IsWebhookEnabled() {
-		logging.Debug("Webhooks disabled, skipping")
-		return nil
-	}
+func (s *Sender) SendWithContext(sendCtx SendContext) error { _ = "STUB: not implemented"; return nil }
 
-	// Check rate limit (non-blocking check)
-	if s.rateLimiter != nil && !s.rateLimiter.Allow() {
-		s.metrics.RecordRateLimited()
-		logging.Warn("Rate limit exceeded, dropping webhook")
-		return ErrRateLimitExceeded
-	}
+// Check rate limit (non-blocking check)
 
-	// Check circuit breaker
-	if s.circuitBreaker != nil && s.circuitBreaker.GetState() == StateOpen {
-		s.metrics.RecordCircuitOpen()
-		logging.Warn("Circuit breaker is open, skipping webhook")
-		return ErrCircuitOpen
-	}
+// Check circuit breaker
 
-	// Generate request ID for tracing
-	requestID := uuid.New().String()
+// Generate request ID for tracing
 
-	// Record metrics
-	s.metrics.RecordRequest()
-	start := time.Now()
+// Record metrics
 
-	// Execute with retry and circuit breaker
-	err := s.sendWithRetryAndCircuitBreaker(requestID, sendCtx)
+// Execute with retry and circuit breaker
 
-	// Record result
-	latency := time.Since(start)
-	if err != nil {
-		s.metrics.RecordFailure()
-		logging.Error("[%s] Webhook failed after retries: %v (latency: %v)", requestID, err, latency)
-	} else {
-		s.metrics.RecordSuccess(sendCtx.Status, latency)
-		logging.Info("[%s] Webhook sent successfully (latency: %v)", requestID, latency)
-	}
+// Record result
 
-	// Update circuit breaker state in metrics
-	if s.circuitBreaker != nil {
-		s.metrics.UpdateCircuitBreakerState(s.circuitBreaker.GetState())
-	}
-
-	return err
-}
+// Update circuit breaker state in metrics
 
 // sendWithRetryAndCircuitBreaker executes the webhook with retry and circuit breaker
 func (s *Sender) sendWithRetryAndCircuitBreaker(requestID string, sendCtx SendContext) error {
-	webhookCfg := s.cfg.Notifications.Webhook
-	statusInfo, _ := s.cfg.GetStatusInfo(string(sendCtx.Status))
-	runtimeCtx := newRuntimeContext(sendCtx, statusInfo)
-
-	// Build payload
-	payload, contentType, err := s.buildPayload(runtimeCtx)
-	if err != nil {
-		return fmt.Errorf("failed to build payload: %w", err)
-	}
-
-	headers := runtimeCtx.resolveHeaders(webhookCfg.Headers)
-
-	// Validate URL
-	if err := validateURL(webhookCfg.URL); err != nil {
-		return fmt.Errorf("invalid webhook URL: %w", err)
-	}
-
-	// Create request function for retry
-	sendFn := func(ctx context.Context) error {
-		return s.sendHTTPRequest(ctx, requestID, webhookCfg.URL, payload, contentType, headers)
-	}
-
-	// Execute with circuit breaker and retry
-	var executeErr error
-	if s.circuitBreaker != nil {
-		// Wrap with circuit breaker
-		executeErr = s.circuitBreaker.Execute(s.ctx, func() error {
-			// Execute with retry
-			return s.retry.Do(s.ctx, sendFn)
-		})
-	} else {
-		// Just retry without circuit breaker
-		executeErr = s.retry.Do(s.ctx, sendFn)
-	}
-
-	return executeErr
+	_ = "STUB: not implemented"
+	return nil
 }
+
+// Build payload
+
+// Validate URL
+
+// Create request function for retry
+
+// Execute with circuit breaker and retry
+
+// Wrap with circuit breaker
+
+// Execute with retry
+
+// Just retry without circuit breaker
 
 // buildPayload builds the webhook payload based on preset.
 func (s *Sender) buildPayload(runtimeCtx *runtimeContext) ([]byte, string, error) {
-	webhookCfg := s.cfg.Notifications.Webhook
-	sendCtx := runtimeCtx.sendCtx
-	statusInfo := runtimeCtx.statusInfo
-
-	// Use formatter if available
-	if formatter, ok := s.formatters[webhookCfg.Preset]; ok {
-		payload, err := formatter.Format(sendCtx, statusInfo)
-		if err != nil {
-			return nil, "", err
-		}
-		payload, err = s.applyPayloadFields(payload, runtimeCtx)
-		if err != nil {
-			return nil, "", err
-		}
-		data, err := json.Marshal(payload)
-		return data, "application/json", err
-	}
-
-	// Fallback to custom format
-	return s.buildCustomPayload(runtimeCtx, webhookCfg.Format)
+	_ = "STUB: not implemented"
+	return nil, "", nil
 }
+
+// Use formatter if available
+
+// Fallback to custom format
 
 // buildCustomPayload builds a custom webhook payload
 func (s *Sender) buildCustomPayload(runtimeCtx *runtimeContext, format string) ([]byte, string, error) {
-	sendCtx := runtimeCtx.sendCtx
-
-	if format == "text" {
-		text := fmt.Sprintf("[%s] %s", sendCtx.Status, sendCtx.Message)
-		return []byte(text), "text/plain", nil
-	}
-
-	// JSON format
-	payload := map[string]interface{}{
-		"status":     string(sendCtx.Status),
-		"message":    sendCtx.Message,
-		"timestamp":  runtimeCtx.now.Format(time.RFC3339),
-		"session_id": sendCtx.SessionID,
-		"source":     "claude-notifications",
-		"title":      runtimeCtx.statusInfo.Title,
-	}
-
-	payloadWithFields, err := s.applyPayloadFields(payload, runtimeCtx)
-	if err != nil {
-		return nil, "", err
-	}
-
-	data, err := json.Marshal(payloadWithFields)
-	return data, "application/json", err
+	_ = "STUB: not implemented"
+	return nil, "", nil
 }
 
+// JSON format
+
 func (s *Sender) applyPayloadFields(base interface{}, runtimeCtx *runtimeContext) (interface{}, error) {
-	extraFields, err := runtimeCtx.resolvePayloadFields(s.cfg.Notifications.Webhook.PayloadFields)
-	if err != nil {
-		return nil, err
-	}
-	if len(extraFields) == 0 {
-		return base, nil
-	}
-
-	baseMap, ok := base.(map[string]interface{})
-	if !ok {
-		return nil, fmt.Errorf("payloadFields are only supported for JSON webhook payloads")
-	}
-
-	mergePayloadMaps(baseMap, extraFields)
-	return baseMap, nil
+	_ = "STUB: not implemented"
+	return nil, nil
 }
 
 // sendHTTPRequest sends the actual HTTP request
 func (s *Sender) sendHTTPRequest(ctx context.Context, requestID, url string, payload []byte, contentType string, headers map[string]string) error {
-	req, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewReader(payload))
-	if err != nil {
-		return fmt.Errorf("failed to create request: %w", err)
-	}
-
-	// Set headers
-	req.Header.Set("Content-Type", contentType)
-	req.Header.Set("User-Agent", "claude-notifications/1.0")
-	req.Header.Set("X-Request-ID", requestID)
-
-	// Set custom headers
-	for key, value := range headers {
-		req.Header.Set(key, value)
-	}
-
-	// Send request
-	resp, err := s.client.Do(req)
-	if err != nil {
-		return fmt.Errorf("HTTP request failed: %w", err)
-	}
-	defer resp.Body.Close()
-
-	// Read response body (limited to 1MB)
-	body, _ := io.ReadAll(io.LimitReader(resp.Body, 1024*1024))
-
-	// Check status code
-	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return NewHTTPError(resp, string(body))
-	}
-
+	_ = "STUB: not implemented"
 	return nil
 }
 
+// Set headers
+
+// Set custom headers
+
+// Send request
+
+// Read response body (limited to 1MB)
+
+// Check status code
+
 // SendAsync sends a webhook asynchronously with graceful shutdown support.
 func (s *Sender) SendAsync(status analyzer.Status, message, sessionID string) {
-	s.SendAsyncWithContext(SendContext{
-		Status:    status,
-		Message:   message,
-		SessionID: sessionID,
-	})
+	_ = "STUB: not implemented"
+	return
 }
 
 // SendAsyncWithContext sends a webhook asynchronously with optional runtime context.
 func (s *Sender) SendAsyncWithContext(sendCtx SendContext) {
-	s.wg.Add(1)
-	// Use SafeGo to protect against panics in async webhook sending
-	errorhandler.SafeGo(func() {
-		defer s.wg.Done()
+	_ = "STUB: not implemented"
 
-		if err := s.SendWithContext(sendCtx); err != nil {
-			errorhandler.HandleError(err, "Async webhook send failed")
-		}
-	})
+	// Use SafeGo to protect against panics in async webhook sending
+	return
 }
 
 // Shutdown gracefully shuts down the webhook sender
 // Waits for in-flight requests to complete (with timeout)
 // Only cancels context if timeout is reached
-func (s *Sender) Shutdown(timeout time.Duration) error {
-	logging.Info("Shutting down webhook sender...")
+func (s *Sender) Shutdown(timeout time.Duration) error { _ = "STUB: not implemented"; return nil }
 
-	// Wait for in-flight requests with timeout
-	// Do NOT cancel context immediately - let requests complete gracefully
-	done := make(chan struct{})
-	go func() {
-		s.wg.Wait()
-		close(done)
-	}()
+// Wait for in-flight requests with timeout
+// Do NOT cancel context immediately - let requests complete gracefully
 
-	select {
-	case <-done:
-		// All requests completed successfully
-		s.cancel() // Clean up context after successful completion
-		logging.Info("All webhook requests completed")
-		return nil
-	case <-time.After(timeout):
-		// Timeout reached - force cancel remaining requests
-		s.cancel()
-		logging.Warn("Webhook shutdown timeout, some requests may be incomplete")
-		return fmt.Errorf("shutdown timeout after %v", timeout)
-	}
-}
+// All requests completed successfully
+// Clean up context after successful completion
+
+// Timeout reached - force cancel remaining requests
 
 // GetMetrics returns current metrics
-func (s *Sender) GetMetrics() Stats {
-	return s.metrics.GetStats()
-}
+func (s *Sender) GetMetrics() Stats { _ = "STUB: not implemented"; return *new(Stats) }
 
 // Helper functions
 
 // parseRetryConfig converts config.RetryConfig to webhook.RetryConfig
 func parseRetryConfig(cfg config.RetryConfig) RetryConfig {
-	initialBackoff, _ := time.ParseDuration(cfg.InitialBackoff)
-	if initialBackoff == 0 {
-		initialBackoff = 1 * time.Second
-	}
-
-	maxBackoff, _ := time.ParseDuration(cfg.MaxBackoff)
-	if maxBackoff == 0 {
-		maxBackoff = 10 * time.Second
-	}
-
-	return RetryConfig{
-		Enabled:        cfg.Enabled,
-		MaxAttempts:    cfg.MaxAttempts,
-		InitialBackoff: initialBackoff,
-		MaxBackoff:     maxBackoff,
-		Multiplier:     2.0,
-	}
+	_ = "STUB: not implemented"
+	return *new(RetryConfig)
 }
 
 // validateURL validates the webhook URL
-func validateURL(rawURL string) error {
-	if rawURL == "" {
-		return fmt.Errorf("URL is empty")
-	}
-
-	parsedURL, err := url.Parse(rawURL)
-	if err != nil {
-		return fmt.Errorf("invalid URL: %w", err)
-	}
-
-	if parsedURL.Scheme != "http" && parsedURL.Scheme != "https" {
-		return fmt.Errorf("URL must use http or https scheme")
-	}
-
-	if parsedURL.Host == "" {
-		return fmt.Errorf("URL must have a host")
-	}
-
-	return nil
-}
+func validateURL(rawURL string) error { _ = "STUB: not implemented"; return nil }

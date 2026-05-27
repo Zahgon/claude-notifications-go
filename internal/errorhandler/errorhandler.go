@@ -1,12 +1,7 @@
 package errorhandler
 
 import (
-	"fmt"
-	"os"
-	"runtime/debug"
 	"sync"
-
-	"github.com/777genius/claude-notifications/internal/logging"
 )
 
 // ErrorHandler provides global error handling and logging
@@ -25,171 +20,86 @@ var (
 // Init initializes the global error handler with custom settings
 // If handler is already initialized, returns the existing handler
 func Init(logToConsole, exitOnCritical, recoveryEnabled bool) *ErrorHandler {
+	_ = "STUB: not implemented"
 	// Use handlerOnce to ensure only one initialization
-	handlerOnce.Do(func() {
-		defaultHandler = &ErrorHandler{
-			logToConsole:    logToConsole,
-			exitOnCritical:  exitOnCritical,
-			recoveryEnabled: recoveryEnabled,
-		}
-
-		// Enable console output in logging if requested
-		if logToConsole {
-			logging.EnableConsoleOutput()
-		}
-	})
-	return defaultHandler
+	return nil
 }
+
+// Enable console output in logging if requested
 
 // GetHandler returns the default error handler (auto-initializes with defaults if needed)
 func GetHandler() *ErrorHandler {
+	_ = "STUB: not implemented"
 	// Use handlerOnce to ensure thread-safe initialization
 	// This prevents data races when multiple goroutines call GetHandler concurrently
-	handlerOnce.Do(func() {
-		// Only init if not already done by explicit Init() call
-		defaultHandler = &ErrorHandler{
-			logToConsole:    true,
-			exitOnCritical:  false,
-			recoveryEnabled: true,
-		}
-		// Enable console output in logging
-		logging.EnableConsoleOutput()
-	})
-	return defaultHandler
+	return nil
 }
+
+// Only init if not already done by explicit Init() call
+
+// Enable console output in logging
 
 // Reset resets the error handler (for testing only)
 // WARNING: This is not thread-safe and should only be called in tests
 // when no other goroutines are using the error handler
-func Reset() {
-	defaultHandler = nil
-	handlerOnce = sync.Once{}
-}
+func Reset() { _ = "STUB: not implemented"; return }
 
 // HandleError handles a general error
-func (h *ErrorHandler) HandleError(err error, context string) {
-	if err == nil {
-		return
-	}
+func (h *ErrorHandler) HandleError(err error, context string) { _ = "STUB: not implemented"; return }
 
-	h.mu.Lock()
-	defer h.mu.Unlock()
-
-	message := fmt.Sprintf("%s: %v", context, err)
-
-	// Log to file (and console if enabled via logging package)
-	logging.Error("%s", message)
-}
+// Log to file (and console if enabled via logging package)
 
 // HandleCriticalError handles a critical error that may require program termination
 func (h *ErrorHandler) HandleCriticalError(err error, context string) {
-	if err == nil {
-		return
-	}
-
-	h.mu.Lock()
-	defer h.mu.Unlock()
-
-	message := fmt.Sprintf("CRITICAL ERROR - %s: %v", context, err)
-
-	// Log to file (and console if enabled via logging package)
-	logging.Error("%s", message)
-
-	// Always output critical errors to stderr as well (even if console logging is disabled)
-	fmt.Fprintf(os.Stderr, "[claude-notifications] %s\n", message)
-
-	if h.exitOnCritical {
-		os.Exit(1)
-	}
+	_ = "STUB: not implemented"
+	return
 }
+
+// Log to file (and console if enabled via logging package)
+
+// Always output critical errors to stderr as well (even if console logging is disabled)
 
 // HandlePanic recovers from a panic and logs it
-func (h *ErrorHandler) HandlePanic() {
-	if !h.recoveryEnabled {
-		return
-	}
+func (h *ErrorHandler) HandlePanic() { _ = "STUB: not implemented"; return }
 
-	if r := recover(); r != nil {
-		h.mu.Lock()
-		defer h.mu.Unlock()
+// Log to file (and console if enabled via logging package)
 
-		message := fmt.Sprintf("PANIC RECOVERED: %v\n%s", r, debug.Stack())
-
-		// Log to file (and console if enabled via logging package)
-		logging.Error("%s", message)
-
-		// Always output panics to stderr as well
-		fmt.Fprintf(os.Stderr, "[claude-notifications] PANIC: %v\n", r)
-
-		if h.exitOnCritical {
-			os.Exit(1)
-		}
-	}
-}
+// Always output panics to stderr as well
 
 // Warn logs a warning message
-func (h *ErrorHandler) Warn(format string, args ...interface{}) {
-	message := fmt.Sprintf(format, args...)
-	logging.Warn("%s", message)
-}
+func (h *ErrorHandler) Warn(format string, args ...interface{}) { _ = "STUB: not implemented"; return }
 
 // Info logs an informational message
-func (h *ErrorHandler) Info(format string, args ...interface{}) {
-	message := fmt.Sprintf(format, args...)
-	logging.Info("%s", message)
-}
+func (h *ErrorHandler) Info(format string, args ...interface{}) { _ = "STUB: not implemented"; return }
 
 // Debug logs a debug message
-func (h *ErrorHandler) Debug(format string, args ...interface{}) {
-	message := fmt.Sprintf(format, args...)
-	logging.Debug("%s", message)
-}
+func (h *ErrorHandler) Debug(format string, args ...interface{}) { _ = "STUB: not implemented"; return }
 
 // Global convenience functions
 
 // HandleError handles a general error using the default handler
-func HandleError(err error, context string) {
-	GetHandler().HandleError(err, context)
-}
+func HandleError(err error, context string) { _ = "STUB: not implemented"; return }
 
 // HandleCriticalError handles a critical error using the default handler
-func HandleCriticalError(err error, context string) {
-	GetHandler().HandleCriticalError(err, context)
-}
+func HandleCriticalError(err error, context string) { _ = "STUB: not implemented"; return }
 
 // HandlePanic recovers from a panic using the default handler
-func HandlePanic() {
-	GetHandler().HandlePanic()
-}
+func HandlePanic() { _ = "STUB: not implemented"; return }
 
 // Warn logs a warning using the default handler
-func Warn(format string, args ...interface{}) {
-	GetHandler().Warn(format, args...)
-}
+func Warn(format string, args ...interface{}) { _ = "STUB: not implemented"; return }
 
 // Info logs an info message using the default handler
-func Info(format string, args ...interface{}) {
-	GetHandler().Info(format, args...)
-}
+func Info(format string, args ...interface{}) { _ = "STUB: not implemented"; return }
 
 // Debug logs a debug message using the default handler
-func Debug(format string, args ...interface{}) {
-	GetHandler().Debug(format, args...)
-}
+func Debug(format string, args ...interface{}) { _ = "STUB: not implemented"; return }
 
 // WithRecovery wraps a function with panic recovery
-func WithRecovery(fn func()) {
-	defer HandlePanic()
-	fn()
-}
+func WithRecovery(fn func()) { _ = "STUB: not implemented"; return }
 
 // WithRecoveryFunc wraps a function that returns an error with panic recovery
-func WithRecoveryFunc(fn func() error) error {
-	defer HandlePanic()
-	return fn()
-}
+func WithRecoveryFunc(fn func() error) error { _ = "STUB: not implemented"; return nil }
 
 // SafeGo runs a goroutine with panic recovery
-func SafeGo(fn func()) {
-	go WithRecovery(fn)
-}
+func SafeGo(fn func()) { _ = "STUB: not implemented"; return }

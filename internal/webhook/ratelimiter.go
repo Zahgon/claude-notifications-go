@@ -22,85 +22,42 @@ type RateLimiter struct {
 
 // NewRateLimiter creates a new rate limiter
 // requestsPerMinute: maximum requests allowed per minute
-func NewRateLimiter(requestsPerMinute int) *RateLimiter {
-	rate := float64(requestsPerMinute) / 60.0 // convert to per second
-	capacity := requestsPerMinute
+func NewRateLimiter(requestsPerMinute int) *RateLimiter { _ = "STUB: not implemented"; return nil }
 
-	return &RateLimiter{
-		rate:       rate,
-		capacity:   capacity,
-		tokens:     float64(capacity), // start with full bucket
-		lastRefill: time.Now(),
-	}
-}
+// convert to per second
+
+// start with full bucket
 
 // Allow checks if a request is allowed under the rate limit
 // Returns true if allowed, false if rate limit exceeded
-func (rl *RateLimiter) Allow() bool {
-	rl.mu.Lock()
-	defer rl.mu.Unlock()
+func (rl *RateLimiter) Allow() bool { _ = "STUB: not implemented"; return false }
 
-	// Refill tokens based on time elapsed
-	now := time.Now()
-	elapsed := now.Sub(rl.lastRefill).Seconds()
-	rl.tokens += elapsed * rl.rate
+// Refill tokens based on time elapsed
 
-	// Cap at capacity
-	if rl.tokens > float64(rl.capacity) {
-		rl.tokens = float64(rl.capacity)
-	}
+// Cap at capacity
 
-	rl.lastRefill = now
-
-	// Try to consume a token
-	if rl.tokens >= 1.0 {
-		rl.tokens -= 1.0
-		return true
-	}
-
-	return false
-}
+// Try to consume a token
 
 // Wait blocks until a request is allowed (with context support)
 // Returns error if context is cancelled
-func (rl *RateLimiter) Wait(ctx context.Context) error {
-	for {
-		if rl.Allow() {
-			return nil
-		}
+func (rl *RateLimiter) Wait(ctx context.Context) error { _ = "STUB: not implemented"; return nil }
 
-		// Calculate time to wait until next token
-		waitTime := rl.timeUntilNextToken()
+// Calculate time to wait until next token
 
-		select {
-		case <-time.After(waitTime):
-			// Try again
-		case <-ctx.Done():
-			return ctx.Err()
-		}
-	}
-}
+// Try again
 
 // timeUntilNextToken calculates how long to wait for next token
 func (rl *RateLimiter) timeUntilNextToken() time.Duration {
-	rl.mu.Lock()
-	defer rl.mu.Unlock()
-
-	// If we have tokens, no need to wait
-	if rl.tokens >= 1.0 {
-		return 0
-	}
-
-	// Calculate tokens needed
-	tokensNeeded := 1.0 - rl.tokens
-	secondsToWait := tokensNeeded / rl.rate
-
-	return time.Duration(secondsToWait * float64(time.Second))
+	_ = "STUB: not implemented"
+	return *new(time.Duration)
 }
+
+// If we have tokens, no need to wait
+
+// Calculate tokens needed
 
 // GetStats returns current rate limiter stats
 func (rl *RateLimiter) GetStats() (tokens float64, capacity int, rate float64) {
-	rl.mu.Lock()
-	defer rl.mu.Unlock()
-	return rl.tokens, rl.capacity, rl.rate
+	_ = "STUB: not implemented"
+	return 0, 0, 0
 }

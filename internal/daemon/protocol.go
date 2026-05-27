@@ -6,9 +6,6 @@ package daemon
 
 import (
 	"errors"
-	"fmt"
-	"os"
-	"path/filepath"
 )
 
 // Common errors
@@ -71,19 +68,12 @@ type PingResponse struct {
 // GetSocketPath returns the Unix socket path for the daemon.
 // Uses XDG_RUNTIME_DIR if available, falls back to /tmp with UID suffix.
 func GetSocketPath() string {
+	_ = "STUB: not implemented"
 	// Prefer XDG_RUNTIME_DIR (usually /run/user/1000)
-	if runtimeDir := os.Getenv("XDG_RUNTIME_DIR"); runtimeDir != "" {
-		return filepath.Join(runtimeDir, "claude-notifications.sock")
-	}
-
-	// Fallback to /tmp with UID for isolation
-	return fmt.Sprintf("/tmp/claude-notifications-%d.sock", os.Getuid())
+	return ""
 }
+
+// Fallback to /tmp with UID for isolation
 
 // GetPidFilePath returns the path to the daemon's PID file.
-func GetPidFilePath() string {
-	if runtimeDir := os.Getenv("XDG_RUNTIME_DIR"); runtimeDir != "" {
-		return filepath.Join(runtimeDir, "claude-notifications.pid")
-	}
-	return fmt.Sprintf("/tmp/claude-notifications-%d.pid", os.Getuid())
-}
+func GetPidFilePath() string { _ = "STUB: not implemented"; return "" }

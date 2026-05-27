@@ -256,17 +256,7 @@ static int raiseWindowByAXTitle(int pid, const char *folderName) {
 import "C"
 
 import (
-	"context"
-	"fmt"
-	"os"
-	"os/exec"
-	"path/filepath"
-	"strings"
 	"time"
-	"unsafe"
-
-	"github.com/777genius/claude-notifications/internal/config"
-	"github.com/777genius/claude-notifications/internal/logging"
 )
 
 const windowFocusRetryAfterRestore = 2
@@ -283,40 +273,11 @@ type FocusWindowOptions struct {
 // retryWindowFocus calls fn with increasing delays until a non-zero result.
 // Returns 1 (found), -1 (no permission), or 0 (not found after all attempts).
 // Worst case: 150+250+400 = 800ms. Best case: 150ms.
-func retryWindowFocus(fn func() C.int) C.int {
-	result := retryWindowFocusWithDelays(func() int {
-		return int(fn())
-	}, []time.Duration{
-		150 * time.Millisecond,
-		250 * time.Millisecond,
-		400 * time.Millisecond,
-	}, time.Sleep)
-	return C.int(result)
-}
+func retryWindowFocus(fn func() C.int) C.int { _ = "STUB: not implemented"; return *new(C.int) }
 
 func retryWindowFocusWithDelays(fn func() int, delays []time.Duration, sleep func(time.Duration)) int {
-	var result int
-	needsPostRestoreRetry := false
-	for _, d := range delays {
-		sleep(d)
-		result = fn()
-		if result == windowFocusRetryAfterRestore {
-			needsPostRestoreRetry = true
-			continue
-		}
-		needsPostRestoreRetry = false
-		if result != 0 {
-			break
-		}
-	}
-	if needsPostRestoreRetry && len(delays) > 0 {
-		sleep(delays[len(delays)-1])
-		result = fn()
-		if result == windowFocusRetryAfterRestore {
-			return 0
-		}
-	}
-	return result
+	_ = "STUB: not implemented"
+	return 0
 }
 
 // FocusAppWindow raises the window matching cwd for the given bundleID app.
@@ -324,65 +285,19 @@ func retryWindowFocusWithDelays(fn func() int, delays []time.Duration, sleep fun
 // falls back to exact AppleScript cwd matching, then finally AXDocument
 // (OSC 7 file:// URL) if Automation is unavailable or no exact match is found.
 // For other apps: uses CGS to find the window across Spaces then raises via AXTitle. macOS only.
-func FocusAppWindow(bundleID, cwd string) error {
-	return FocusAppWindowWithOptions(bundleID, cwd, FocusWindowOptions{})
-}
+func FocusAppWindow(bundleID, cwd string) error { _ = "STUB: not implemented"; return nil }
 
 func FocusAppWindowWithOptions(bundleID, cwd string, opts FocusWindowOptions) error {
-	cBundleID := C.CString(bundleID)
-	defer C.free(unsafe.Pointer(cBundleID))
-
-	pid := int(C.findPID(cBundleID))
-	if pid < 0 {
-		return fmt.Errorf("app not running: %s", bundleID)
-	}
-
-	if isGhosttyBundleID(bundleID) {
-		if cwd == "" {
-			return fmt.Errorf("invalid cwd: %s", cwd)
-		}
-		return focusGhosttyWindowWithOptions(pid, bundleID, cwd, opts, tryGhosttyExactFocus, focusGhosttyWindowByAXDocument)
-	}
-
-	folderName := filepath.Base(cwd)
-	if folderName == "" || folderName == "." || folderName == string(filepath.Separator) {
-		return fmt.Errorf("invalid cwd: %s", cwd)
-	}
-	cFolder := C.CString(folderName)
-	defer C.free(unsafe.Pointer(cFolder))
-
-	prepResult := C.findSwitchAndActivate(C.int(pid), cFolder)
-	if prepResult < 0 {
-		// Ask macOS for permission first. If access is still unavailable after
-		// the system prompt flow, show our own explanation with a Settings link.
-		if C.requestScreenRecordingAccess() != 0 {
-			prepResult = C.findSwitchAndActivate(C.int(pid), cFolder)
-		}
-		if prepResult < 0 {
-			promptScreenRecordingOnce()
-		}
-		C.activateByPID(C.int(pid))
-		return fmt.Errorf("Screen Recording permission required: grant it in System Settings → Privacy & Security → Screen Recording, then try again")
-	}
-	if prepResult == 0 {
-		// Window not found by title, but still activate the app so the user gets
-		// at least app-level focus. This matches the previous AppleScript behavior
-		// which always called "activate" before searching for windows.
-		C.activateByPID(C.int(pid))
-		return fmt.Errorf("window not found for %s (cwd: %s)", bundleID, cwd)
-	}
-	result := retryWindowFocus(func() C.int {
-		return C.raiseWindowByAXTitle(C.int(pid), cFolder)
-	})
-	switch {
-	case result < 0:
-		promptAccessibilityOnce()
-		return fmt.Errorf("Accessibility permission required: grant it in System Settings → Privacy & Security → Accessibility, then try again")
-	case result == 0:
-		return fmt.Errorf("window not found for %s (cwd: %s)", bundleID, cwd)
-	}
+	_ = "STUB: not implemented"
 	return nil
 }
+
+// Ask macOS for permission first. If access is still unavailable after
+// the system prompt flow, show our own explanation with a Settings link.
+
+// Window not found by title, but still activate the app so the user gets
+// at least app-level focus. This matches the previous AppleScript behavior
+// which always called "activate" before searching for windows.
 
 func focusGhosttyWindow(
 	pid int,
@@ -390,14 +305,8 @@ func focusGhosttyWindow(
 	exactFocus func(string) error,
 	fallback func(int, string, string) error,
 ) error {
-	return focusGhosttyWindowWithOptions(
-		pid,
-		bundleID,
-		cwd,
-		FocusWindowOptions{},
-		func(cwd string, _ FocusWindowOptions) error { return exactFocus(cwd) },
-		fallback,
-	)
+	_ = "STUB: not implemented"
+	return nil
 }
 
 func focusGhosttyWindowWithOptions(
@@ -407,140 +316,28 @@ func focusGhosttyWindowWithOptions(
 	exactFocus func(string, FocusWindowOptions) error,
 	fallback func(int, string, string) error,
 ) error {
-	if err := exactFocus(cwd, opts); err == nil {
-		return nil
-	} else {
-		logging.Debug("Ghostty exact tab focus unavailable, falling back to AXDocument: %v", err)
-	}
-	return fallback(pid, bundleID, cwd)
+	_ = "STUB: not implemented"
+	return nil
 }
 
 func tryGhosttyExactFocus(cwd string, opts FocusWindowOptions) error {
-	if terminalID := strings.TrimSpace(opts.GhosttyTerminalID); terminalID != "" {
-		if err := ghosttyAppleScriptIDRunner(terminalID); err == nil {
-			return nil
-		} else {
-			logging.Debug("Ghostty terminal-id focus failed for %s, falling back to cwd match: %v", terminalID, err)
-		}
-	}
-
-	return tryGhosttyAppleScriptFocus(cwd)
-}
-
-func tryGhosttyAppleScriptFocus(cwd string) error {
-	candidates := ghosttyFocusCandidates(cwd)
-	if len(candidates) == 0 {
-		return fmt.Errorf("invalid cwd: %s", cwd)
-	}
-	return ghosttyAppleScriptRunner(candidates)
-}
-
-func runGhosttyAppleScriptFocusByID(terminalID string) error {
-	if strings.TrimSpace(terminalID) == "" {
-		return fmt.Errorf("empty Ghostty terminal ID")
-	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), ghosttyAppleScriptFocusTimeout)
-	defer cancel()
-
-	output, err := exec.CommandContext(
-		ctx,
-		"/usr/bin/osascript",
-		"-e",
-		ghosttyFocusByIDAppleScript,
-		"--",
-		terminalID,
-	).CombinedOutput()
-	if ctx.Err() == context.DeadlineExceeded {
-		return fmt.Errorf("Ghostty terminal-id AppleScript timed out after %s", ghosttyAppleScriptFocusTimeout)
-	}
-	if err != nil {
-		outputText := strings.TrimSpace(string(output))
-		if outputText == "" {
-			return fmt.Errorf("Ghostty terminal-id AppleScript failed: %w", err)
-		}
-		return fmt.Errorf("Ghostty terminal-id AppleScript failed: %w: %s", err, outputText)
-	}
+	_ = "STUB: not implemented"
 	return nil
 }
 
-func runGhosttyAppleScriptFocus(candidates []string) error {
-	if len(candidates) == 0 {
-		return fmt.Errorf("no Ghostty cwd candidates")
-	}
+func tryGhosttyAppleScriptFocus(cwd string) error { _ = "STUB: not implemented"; return nil }
 
-	ctx, cancel := context.WithTimeout(context.Background(), ghosttyAppleScriptFocusTimeout)
-	defer cancel()
+func runGhosttyAppleScriptFocusByID(terminalID string) error { _ = "STUB: not implemented"; return nil }
 
-	args := []string{"-e", ghosttyFocusAppleScript, "--"}
-	args = append(args, candidates...)
+func runGhosttyAppleScriptFocus(candidates []string) error { _ = "STUB: not implemented"; return nil }
 
-	output, err := exec.CommandContext(ctx, "/usr/bin/osascript", args...).CombinedOutput()
-	if ctx.Err() == context.DeadlineExceeded {
-		return fmt.Errorf("Ghostty AppleScript timed out after %s", ghosttyAppleScriptFocusTimeout)
-	}
-	if err != nil {
-		outputText := strings.TrimSpace(string(output))
-		if outputText == "" {
-			return fmt.Errorf("Ghostty AppleScript failed: %w", err)
-		}
-		return fmt.Errorf("Ghostty AppleScript failed: %w: %s", err, outputText)
-	}
-	return nil
-}
+func ghosttyFocusCandidates(cwd string) []string { _ = "STUB: not implemented"; return nil }
 
-func ghosttyFocusCandidates(cwd string) []string {
-	seen := make(map[string]struct{}, 2)
-	candidates := make([]string, 0, 2)
-
-	add := func(path string) {
-		normalized := normalizeGhosttyWorkingDir(path)
-		if normalized == "" {
-			return
-		}
-		if _, exists := seen[normalized]; exists {
-			return
-		}
-		seen[normalized] = struct{}{}
-		candidates = append(candidates, normalized)
-	}
-
-	add(cwd)
-	if resolved, err := filepath.EvalSymlinks(cwd); err == nil {
-		add(resolved)
-	}
-
-	return candidates
-}
-
-func normalizeGhosttyWorkingDir(path string) string {
-	if path == "" {
-		return ""
-	}
-	return filepath.Clean(path)
-}
+func normalizeGhosttyWorkingDir(path string) string { _ = "STUB: not implemented"; return "" }
 
 func focusGhosttyWindowByAXDocument(pid int, bundleID, cwd string) error {
-	C.activateByPID(C.int(pid))
-
-	for _, candidate := range ghosttyFocusCandidates(cwd) {
-		fileURL := cwdToFileURL(candidate)
-		cFileURL := C.CString(fileURL)
-		result := retryWindowFocus(func() C.int {
-			return C.raiseWindowByAXDocument(C.int(pid), cFileURL)
-		})
-		C.free(unsafe.Pointer(cFileURL))
-
-		switch {
-		case result < 0:
-			promptAccessibilityOnce()
-			return fmt.Errorf("Accessibility permission required: grant it in System Settings → Privacy & Security → Accessibility, then try again")
-		case result != 0:
-			return nil
-		}
-	}
-
-	return fmt.Errorf("window not found for %s (cwd: %s)", bundleID, cwd)
+	_ = "STUB: not implemented"
+	return nil
 }
 
 const ghosttyFocusAppleScript = `
@@ -607,48 +404,16 @@ end run
 // promptScreenRecordingOnce sends a one-time notification explaining why Screen
 // Recording access is needed. Clicking the notification opens the settings pane.
 // Uses the plugin's own notification system without an osascript fallback.
-func promptScreenRecordingOnce() {
-	stableDir, err := config.GetStableConfigDir()
-	if err != nil {
-		return
-	}
-	markerPath := filepath.Join(stableDir, ".screen-recording-prompted")
+func promptScreenRecordingOnce() { _ = "STUB: not implemented"; return }
 
-	if _, err := os.Stat(markerPath); err == nil {
-		return // already prompted
-	}
+// already prompted
 
-	// Mark as prompted before sending (avoid duplicate prompts on error)
-	_ = os.MkdirAll(stableDir, 0755)
-	_ = os.WriteFile(markerPath, []byte("1"), 0644)
-
-	_ = SendQuickNotification(
-		"Screen Recording Access Needed",
-		"Click-to-focus reads window titles to find the right window. No screen content is ever recorded. Click to open Settings.",
-		`open "x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture"`,
-	)
-}
+// Mark as prompted before sending (avoid duplicate prompts on error)
 
 // promptAccessibilityOnce sends a one-time notification explaining why
 // Accessibility access is needed for click-to-focus window selection.
-func promptAccessibilityOnce() {
-	stableDir, err := config.GetStableConfigDir()
-	if err != nil {
-		return
-	}
-	markerPath := filepath.Join(stableDir, ".accessibility-prompted")
+func promptAccessibilityOnce() { _ = "STUB: not implemented"; return }
 
-	if _, err := os.Stat(markerPath); err == nil {
-		return // already prompted
-	}
+// already prompted
 
-	// Mark as prompted before sending (avoid duplicate prompts on error)
-	_ = os.MkdirAll(stableDir, 0755)
-	_ = os.WriteFile(markerPath, []byte("1"), 0644)
-
-	_ = SendQuickNotification(
-		"Accessibility Access Needed",
-		"Click-to-focus uses the Accessibility API to find and raise the right window. Click to open Settings.",
-		`open "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility"`,
-	)
-}
+// Mark as prompted before sending (avoid duplicate prompts on error)

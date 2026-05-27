@@ -8,7 +8,6 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	"path/filepath"
 
 	"github.com/777genius/claude-notifications/internal/audio"
 	"github.com/777genius/claude-notifications/internal/sounds"
@@ -147,25 +146,11 @@ func main() {
 }
 
 func getPluginRoot() string {
+	_ = "STUB: not implemented"
 	// Try CLAUDE_PLUGIN_ROOT environment variable first
-	if root := os.Getenv("CLAUDE_PLUGIN_ROOT"); root != "" {
-		return root
-	}
-
-	// Try to find plugin root relative to executable
-	exe, err := os.Executable()
-	if err == nil {
-		exeDir := filepath.Dir(exe)
-		if filepath.Base(exeDir) == "bin" {
-			return filepath.Dir(exeDir)
-		}
-		return filepath.Dir(exeDir)
-	}
-
-	// Fallback to current directory
-	cwd, err := os.Getwd()
-	if err != nil {
-		return "."
-	}
-	return cwd
+	return ""
 }
+
+// Try to find plugin root relative to executable
+
+// Fallback to current directory

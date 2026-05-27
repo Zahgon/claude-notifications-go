@@ -1,58 +1,17 @@
 package daemon
 
-import (
-	"os"
-	"os/exec"
-	"strings"
-)
-
 const claudeNotificationsDesktopEntryID = "claude-notifications"
 
 // escapeJS escapes a string for safe interpolation into JavaScript single-quoted strings.
 // Prevents JS injection when values are passed to GNOME Shell.Eval.
-func escapeJS(s string) string {
-	r := strings.NewReplacer(
-		`\`, `\\`,
-		`'`, `\'`,
-		`"`, `\"`,
-		"\n", `\n`,
-		"\r", `\r`,
-		"\x00", `\x00`,
-		"\u2028", `\u2028`,
-		"\u2029", `\u2029`,
-	)
-	return r.Replace(s)
-}
+func escapeJS(s string) string { _ = "STUB: not implemented"; return "" }
 
 // GetAppID returns the .desktop app ID for a terminal name.
-func GetAppID(terminalName string) string {
-	switch strings.ToLower(terminalName) {
-	case "code", "vscode", "visual studio code":
-		return "code.desktop"
-	case "gnome-terminal":
-		return "org.gnome.Terminal.desktop"
-	case "konsole":
-		return "org.kde.konsole.desktop"
-	case "alacritty":
-		return "Alacritty.desktop"
-	case "kitty":
-		return "kitty.desktop"
-	case "wezterm":
-		return "org.wezfurlong.wezterm.desktop"
-	case "tilix":
-		return "com.gexperts.Tilix.desktop"
-	case "terminator":
-		return "terminator.desktop"
-	default:
-		return strings.ToLower(terminalName) + ".desktop"
-	}
-}
+func GetAppID(terminalName string) string { _ = "STUB: not implemented"; return "" }
 
 // GetDesktopEntryID returns the desktop entry ID (without .desktop suffix) for a terminal.
 // This is the value expected by the freedesktop "desktop-entry" notification hint.
-func GetDesktopEntryID(terminalName string) string {
-	return strings.TrimSuffix(GetAppID(terminalName), ".desktop")
-}
+func GetDesktopEntryID(terminalName string) string { _ = "STUB: not implemented"; return "" }
 
 // GetNotificationDesktopEntryID returns the desktop-entry hint value to use for
 // notifications. GNOME on Wayland shows a long-running loading cursor when the
@@ -61,198 +20,57 @@ func GetDesktopEntryID(terminalName string) string {
 // file with StartupNotify=false avoids that spinner while preserving click
 // handling via our daemon.
 func GetNotificationDesktopEntryID(terminalName string) string {
-	if isGnomeWaylandSession() && hasClaudeNotificationsDesktopEntry() {
-		return claudeNotificationsDesktopEntryID
-	}
-	return GetDesktopEntryID(terminalName)
+	_ = "STUB: not implemented"
+	return ""
 }
 
-func isGnomeWaylandSession() bool {
-	if !strings.EqualFold(strings.TrimSpace(os.Getenv("XDG_SESSION_TYPE")), "wayland") {
-		return false
-	}
+func isGnomeWaylandSession() bool { _ = "STUB: not implemented"; return false }
 
-	for _, desktop := range []string{
-		os.Getenv("XDG_CURRENT_DESKTOP"),
-		os.Getenv("XDG_SESSION_DESKTOP"),
-	} {
-		for _, part := range strings.Split(desktop, ":") {
-			if strings.EqualFold(strings.TrimSpace(part), "GNOME") {
-				return true
-			}
-		}
-	}
+func hasClaudeNotificationsDesktopEntry() bool { _ = "STUB: not implemented"; return false }
 
-	return false
-}
-
-func hasClaudeNotificationsDesktopEntry() bool {
-	_, err := os.Stat(getClaudeNotificationsDesktopEntryPath())
-	return err == nil
-}
-
-func getClaudeNotificationsDesktopEntryPath() string {
-	dataHome := strings.TrimSpace(os.Getenv("XDG_DATA_HOME"))
-	if dataHome == "" {
-		homeDir, err := os.UserHomeDir()
-		if err != nil || strings.TrimSpace(homeDir) == "" {
-			return ""
-		}
-		dataHome = homeDir + "/.local/share"
-	}
-
-	return dataHome + "/applications/" + claudeNotificationsDesktopEntryID + ".desktop"
-}
+func getClaudeNotificationsDesktopEntryPath() string { _ = "STUB: not implemented"; return "" }
 
 // GetWlrctlAppID returns the wlroots app_id for a terminal name.
-func GetWlrctlAppID(terminalName string) string {
-	switch strings.ToLower(terminalName) {
-	case "code", "vscode", "visual studio code":
-		return "code"
-	case "alacritty":
-		return "Alacritty"
-	case "kitty":
-		return "kitty"
-	case "wezterm":
-		return "org.wezfurlong.wezterm"
-	case "gnome-terminal":
-		return "org.gnome.Terminal"
-	case "konsole":
-		return "org.kde.konsole"
-	default:
-		return strings.ToLower(terminalName)
-	}
-}
+func GetWlrctlAppID(terminalName string) string { _ = "STUB: not implemented"; return "" }
 
 // GetKdotoolClass returns the window class for kdotool search.
-func GetKdotoolClass(terminalName string) string {
-	switch strings.ToLower(terminalName) {
-	case "code", "vscode", "visual studio code":
-		return "code"
-	case "alacritty":
-		return "Alacritty"
-	case "kitty":
-		return "kitty"
-	case "wezterm":
-		return "org.wezfurlong.wezterm"
-	case "gnome-terminal":
-		return "gnome-terminal-server"
-	case "konsole":
-		return "konsole"
-	default:
-		return strings.ToLower(terminalName)
-	}
-}
+func GetKdotoolClass(terminalName string) string { _ = "STUB: not implemented"; return "" }
 
 // GetXdotoolClass returns the X11 WM_CLASS for xdotool search.
-func GetXdotoolClass(terminalName string) string {
-	switch strings.ToLower(terminalName) {
-	case "code", "vscode", "visual studio code":
-		return "Code"
-	case "alacritty":
-		return "Alacritty"
-	case "kitty":
-		return "kitty"
-	case "wezterm":
-		return "org.wezfurlong.wezterm"
-	case "gnome-terminal":
-		return "Gnome-terminal"
-	case "konsole":
-		return "konsole"
-	case "xfce4-terminal":
-		return "Xfce4-terminal"
-	case "mate-terminal":
-		return "Mate-terminal"
-	case "tilix":
-		return "Tilix"
-	case "terminator":
-		return "Terminator"
-	default:
-		return terminalName
-	}
-}
+func GetXdotoolClass(terminalName string) string { _ = "STUB: not implemented"; return "" }
 
 // GetSearchTerm returns a window title search term for a terminal name.
-func GetSearchTerm(terminalName string) string {
-	switch strings.ToLower(terminalName) {
-	case "code", "vscode", "visual studio code":
-		return "Visual Studio Code"
-	case "gnome-terminal":
-		return "Terminal"
-	default:
-		return terminalName
-	}
-}
+func GetSearchTerm(terminalName string) string { _ = "STUB: not implemented"; return "" }
 
 // GetSearchTermWithFolder returns the window title search term, using the project
 // folder name for VS Code when available (more specific than "Visual Studio Code").
 func GetSearchTermWithFolder(terminalName, folderName string) string {
-	switch strings.ToLower(terminalName) {
-	case "code", "vscode", "visual studio code":
-		if folderName != "" {
-			return folderName
-		}
-	}
-	return GetSearchTerm(terminalName)
+	_ = "STUB: not implemented"
+	return ""
 }
 
 // GetTerminalName detects the current terminal from environment variables.
 func GetTerminalName() string {
+	_ = "STUB: not implemented"
 	// Try TERM_PROGRAM first (set by many terminals)
-	if termProg := os.Getenv("TERM_PROGRAM"); termProg != "" {
-		return termProg
-	}
-
-	// Check VS Code indicators
-	if os.Getenv("VSCODE_INJECTION") != "" || os.Getenv("VSCODE_GIT_IPC_HANDLE") != "" {
-		return "Code"
-	}
-
-	// Check GNOME Terminal indicators
-	if os.Getenv("GNOME_TERMINAL_SCREEN") != "" || os.Getenv("GNOME_TERMINAL_SERVICE") != "" {
-		return "gnome-terminal"
-	}
-
-	// Check Terminator (does not set TERM_PROGRAM, but always sets TERMINATOR_UUID)
-	if os.Getenv("TERMINATOR_UUID") != "" {
-		return "terminator"
-	}
-
-	// Fallback to generic terminal
-	return "Terminal"
+	return ""
 }
+
+// Check VS Code indicators
+
+// Check GNOME Terminal indicators
+
+// Check Terminator (does not set TERM_PROGRAM, but always sets TERMINATOR_UUID)
+
+// Fallback to generic terminal
 
 // GetX11WindowID returns the current terminal window's X11 window ID when available.
 // It is captured in the hook process and later used by the daemon for exact focus on X11.
-func GetX11WindowID() string {
-	return strings.TrimSpace(os.Getenv("WINDOWID"))
-}
+func GetX11WindowID() string { _ = "STUB: not implemented"; return "" }
 
 // GetExactWindowTitle returns an exact top-level window title for terminals that expose
 // a reliable per-terminal identifier. Currently Terminator can provide this via
 // TERMINATOR_UUID + remotinator.
-func GetExactWindowTitle(terminalName string) string {
-	switch strings.ToLower(terminalName) {
-	case "terminator":
-		return getTerminatorWindowTitle()
-	default:
-		return ""
-	}
-}
+func GetExactWindowTitle(terminalName string) string { _ = "STUB: not implemented"; return "" }
 
-func getTerminatorWindowTitle() string {
-	if os.Getenv("TERMINATOR_UUID") == "" {
-		return ""
-	}
-	if _, err := exec.LookPath("remotinator"); err != nil {
-		return ""
-	}
-
-	cmd := exec.Command("remotinator", "get_window_title")
-	output, err := cmd.CombinedOutput()
-	if err != nil {
-		return ""
-	}
-
-	return strings.TrimSpace(string(output))
-}
+func getTerminatorWindowTitle() string { _ = "STUB: not implemented"; return "" }

@@ -1,10 +1,5 @@
 package sessionname
 
-import (
-	"fmt"
-	"strings"
-)
-
 // Lists for friendly name generation (same as bash version)
 var adjectives = []string{
 	"bold", "brave", "bright", "calm", "clever",
@@ -35,60 +30,28 @@ var nouns = []string{
 // Returns:
 //   - Friendly name string (e.g., "peak")
 func GenerateSessionName(sessionID string) string {
+	_ = "STUB: not implemented"
 	// Return "unknown" if no session ID
-	if sessionID == "" || sessionID == "unknown" {
-		return "unknown"
-	}
-
-	// Remove dashes and convert to lowercase
-	cleanID := strings.ToLower(strings.ReplaceAll(sessionID, "-", ""))
-
-	// Use first 8 hex chars as seed for word selection
-	if len(cleanID) < 8 {
-		// Fallback for short IDs
-		return "unknown"
-	}
-
-	seed := cleanID[0:8]
-
-	// Combine adjectives and nouns into a single pool for more variety
-	allWords := append(adjectives, nouns...)
-
-	// Convert hex to decimal for array indexing
-	index := hexToInt(seed) % len(allWords)
-
-	return allWords[index]
+	return ""
 }
+
+// Remove dashes and convert to lowercase
+
+// Use first 8 hex chars as seed for word selection
+
+// Fallback for short IDs
+
+// Combine adjectives and nouns into a single pool for more variety
+
+// Convert hex to decimal for array indexing
 
 // GenerateSessionLabel generates a friendly name with session ID prefix.
 // Returns a string like "bold 06ddb8f7" for better session identification.
-func GenerateSessionLabel(sessionID string) string {
-	name := GenerateSessionName(sessionID)
-	if name == "unknown" {
-		return "unknown"
-	}
+func GenerateSessionLabel(sessionID string) string { _ = "STUB: not implemented"; return "" }
 
-	// Extract first 8 chars of UUID (before first dash)
-	prefix := sessionID
-	if idx := strings.Index(sessionID, "-"); idx != -1 {
-		prefix = sessionID[:idx]
-	}
-	if len(prefix) > 8 {
-		prefix = prefix[:8]
-	}
-
-	return name + " " + prefix
-}
+// Extract first 8 chars of UUID (before first dash)
 
 // hexToInt converts hex string to int (takes first 6 characters for safety)
-func hexToInt(hex string) int {
-	if len(hex) > 6 {
-		hex = hex[0:6]
-	}
+func hexToInt(hex string) int { _ = "STUB: not implemented"; return 0 }
 
-	var result int
-	if _, err := fmt.Sscanf(hex, "%x", &result); err != nil {
-		return 0 // Return 0 on parse error
-	}
-	return result
-}
+// Return 0 on parse error

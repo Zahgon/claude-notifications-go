@@ -5,14 +5,8 @@
 package daemon
 
 import (
-	"encoding/json"
-	"fmt"
-	"log"
 	"net"
-	"os"
-	"os/signal"
 	"sync"
-	"syscall"
 	"time"
 
 	"github.com/esiqveland/notify"
@@ -56,381 +50,104 @@ type ServerConfig struct {
 }
 
 // DefaultServerConfig returns the default server configuration
-func DefaultServerConfig() ServerConfig {
-	return ServerConfig{
-		IdleTimeout: 5 * time.Minute,
-	}
-}
+func DefaultServerConfig() ServerConfig { _ = "STUB: not implemented"; return *new(ServerConfig) }
 
 // NewServer creates a new daemon server
 func NewServer(cfg ServerConfig) (*Server, error) {
+	_ = "STUB: not implemented"
 	// Connect to D-Bus session bus
-	conn, err := dbus.SessionBus()
-	if err != nil {
-		return nil, fmt.Errorf("failed to connect to D-Bus session bus: %w", err)
-	}
-
-	s := &Server{
-		conn:         conn,
-		startTime:    time.Now(),
-		focusCtx:     make(map[uint32]focusInfo),
-		idleTimeout:  cfg.IdleTimeout,
-		lastActivity: time.Now(),
-		done:         make(chan struct{}),
-	}
-
-	// Create notifier with action callback
-	notifier, err := notify.New(conn,
-		notify.WithOnAction(s.onActionInvoked),
-		notify.WithOnClosed(s.onNotificationClosed),
-	)
-	if err != nil {
-		conn.Close()
-		return nil, fmt.Errorf("failed to create notifier: %w", err)
-	}
-	s.notifier = notifier
-
-	return s, nil
+	return nil, nil
 }
+
+// Create notifier with action callback
 
 // Run starts the daemon server
-func (s *Server) Run() error {
-	socketPath := GetSocketPath()
+func (s *Server) Run() error { _ = "STUB: not implemented"; return nil }
 
-	// Remove existing socket
-	os.Remove(socketPath)
+// Remove existing socket
 
-	// Create listener
-	listener, err := net.Listen("unix", socketPath)
-	if err != nil {
-		return fmt.Errorf("failed to create socket: %w", err)
-	}
-	s.listener = listener
+// Create listener
 
-	// Set socket permissions
-	if err := os.Chmod(socketPath, 0600); err != nil {
-		listener.Close()
-		return fmt.Errorf("failed to set socket permissions: %w", err)
-	}
+// Set socket permissions
 
-	// Write PID file
-	pidPath := GetPidFilePath()
-	if err := os.WriteFile(pidPath, []byte(fmt.Sprintf("%d", os.Getpid())), 0600); err != nil {
-		log.Printf("[WARN] Failed to write PID file: %v", err)
-	}
+// Write PID file
 
-	log.Printf("[INFO] Daemon started, listening on %s", socketPath)
+// Handle signals
 
-	// Handle signals
-	sigChan := make(chan os.Signal, 1)
-	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
+// Start idle timeout checker if enabled
 
-	// Start idle timeout checker if enabled
-	if s.idleTimeout > 0 {
-		s.wg.Add(1)
-		go s.idleChecker()
-	}
+// Accept connections
 
-	// Accept connections
-	s.wg.Add(1)
-	go s.acceptLoop()
-
-	// Wait for shutdown signal
-	select {
-	case sig := <-sigChan:
-		log.Printf("[INFO] Received signal %v, shutting down", sig)
-	case <-s.done:
-		log.Printf("[INFO] Shutdown requested")
-	}
-
-	return s.Shutdown()
-}
+// Wait for shutdown signal
 
 // acceptLoop accepts incoming connections
-func (s *Server) acceptLoop() {
-	defer s.wg.Done()
-
-	for {
-		conn, err := s.listener.Accept()
-		if err != nil {
-			s.mu.Lock()
-			shutdown := s.shutdown
-			s.mu.Unlock()
-
-			if shutdown {
-				return
-			}
-			log.Printf("[ERROR] Accept error: %v", err)
-			continue
-		}
-
-		s.wg.Add(1)
-		go s.handleConnection(conn)
-	}
-}
+func (s *Server) acceptLoop() { _ = "STUB: not implemented"; return }
 
 // handleConnection handles a single client connection
-func (s *Server) handleConnection(conn net.Conn) {
-	defer s.wg.Done()
-	defer conn.Close()
+func (s *Server) handleConnection(conn net.Conn) { _ = "STUB: not implemented"; return }
 
-	s.updateActivity()
+// Set read deadline
 
-	// Set read deadline
-	if err := conn.SetReadDeadline(time.Now().Add(30 * time.Second)); err != nil {
-		log.Printf("[ERROR] Failed to set read deadline: %v", err)
-		return
-	}
+// Read request
 
-	// Read request
-	decoder := json.NewDecoder(conn)
-	var req Request
-	if err := decoder.Decode(&req); err != nil {
-		log.Printf("[ERROR] Failed to decode request: %v", err)
-		s.sendError(conn, "invalid request")
-		return
-	}
+// Handle request
 
-	// Handle request
-	var resp Response
-	resp.Type = req.Type
+// Signal shutdown after sending response
 
-	switch req.Type {
-	case MessageTypeNotify:
-		if req.Notify == nil {
-			s.sendError(conn, "missing notify payload")
-			return
-		}
-		notifyResp, err := s.handleNotification(req.Notify)
-		if err != nil {
-			resp.Error = err.Error()
-		} else {
-			resp.Notify = notifyResp
-		}
-
-	case MessageTypePing:
-		resp.Ping = &PingResponse{
-			Version: ProtocolVersion,
-			Uptime:  int64(time.Since(s.startTime).Seconds()),
-		}
-
-	case MessageTypeStop:
-		log.Printf("[INFO] Stop command received")
-		resp.Ping = &PingResponse{
-			Version: ProtocolVersion,
-			Uptime:  int64(time.Since(s.startTime).Seconds()),
-		}
-		// Signal shutdown after sending response
-		defer func() {
-			s.mu.Lock()
-			if !s.shutdown {
-				s.shutdown = true
-				close(s.done)
-			}
-			s.mu.Unlock()
-		}()
-
-	default:
-		s.sendError(conn, "unknown message type")
-		return
-	}
-
-	// Send response
-	encoder := json.NewEncoder(conn)
-	if err := encoder.Encode(resp); err != nil {
-		log.Printf("[ERROR] Failed to encode response: %v", err)
-	}
-}
+// Send response
 
 // handleNotification processes a notification request
 func (s *Server) handleNotification(req *NotifyRequest) (*NotifyResponse, error) {
+	_ = "STUB: not implemented"
 	// Determine focus target
-	focusTarget := req.FocusTarget
-	if focusTarget == "" {
-		focusTarget = GetTerminalName()
-	}
-
-	// Calculate timeout
-	timeout := time.Duration(req.Timeout) * time.Second
-	if timeout <= 0 {
-		timeout = 30 * time.Second
-	}
-
-	// Create notification with click action
-	n := notify.Notification{
-		AppName:       "claude-notifications",
-		Summary:       req.Title,
-		Body:          req.Body,
-		ExpireTimeout: timeout,
-		Actions: []notify.Action{
-			{Key: "default", Label: "Focus Terminal"},
-		},
-		Hints: map[string]dbus.Variant{
-			"desktop-entry":  dbus.MakeVariant(GetNotificationDesktopEntryID(focusTarget)),
-			"suppress-sound": dbus.MakeVariant(true),
-		},
-	}
-
-	// Send notification
-	id, err := s.notifier.SendNotification(n)
-	if err != nil {
-		return nil, fmt.Errorf("failed to send notification: %w", err)
-	}
-
-	// Store focus context
-	s.focusCtxMu.Lock()
-	s.focusCtx[id] = focusInfo{
-		target:      focusTarget,
-		folder:      req.FocusFolder,
-		windowID:    req.FocusWindowID,
-		windowTitle: req.FocusWindowTitle,
-	}
-	s.focusCtxMu.Unlock()
-
-	log.Printf("[INFO] Notification sent: ID=%d, focus_target=%s, focus_folder=%s, focus_window_id=%s, focus_window_title=%q",
-		id, focusTarget, req.FocusFolder, req.FocusWindowID, req.FocusWindowTitle)
-
-	return &NotifyResponse{
-		Success:        true,
-		NotificationID: id,
-	}, nil
+	return nil, nil
 }
+
+// Calculate timeout
+
+// Create notification with click action
+
+// Send notification
+
+// Store focus context
 
 // onActionInvoked is called when a notification action is invoked
 func (s *Server) onActionInvoked(sig *notify.ActionInvokedSignal) {
-	log.Printf("[INFO] ActionInvoked: ID=%d, Action=%s", sig.ID, sig.ActionKey)
-
-	if sig.ActionKey != "default" {
-		return
-	}
-
-	// Get focus target
-	s.focusCtxMu.RLock()
-	info, exists := s.focusCtx[sig.ID]
-	s.focusCtxMu.RUnlock()
-	focusTarget := info.target
-	focusFolder := info.folder
-	focusWindowID := info.windowID
-	focusWindowTitle := info.windowTitle
-
-	if !exists {
-		log.Printf("[WARN] No focus context for notification %d", sig.ID)
-		return
-	}
-
-	// Attempt to focus
-	log.Printf("[INFO] Attempting to focus: %s (folder: %s, window_id: %s, window_title: %q)",
-		focusTarget, focusFolder, focusWindowID, focusWindowTitle)
-	if err := TryFocusWithHints(focusTarget, focusFolder, focusWindowID, focusWindowTitle); err != nil {
-		log.Printf("[ERROR] Focus failed: %v", err)
-	} else {
-		log.Printf("[INFO] Focus succeeded")
-	}
-
-	// Clean up focus context
-	s.focusCtxMu.Lock()
-	delete(s.focusCtx, sig.ID)
-	s.focusCtxMu.Unlock()
+	_ = "STUB: not implemented"
+	return
 }
+
+// Get focus target
+
+// Attempt to focus
+
+// Clean up focus context
 
 // onNotificationClosed is called when a notification is closed
 func (s *Server) onNotificationClosed(sig *notify.NotificationClosedSignal) {
+	_ = "STUB: not implemented"
 	// Clean up focus context
-	s.focusCtxMu.Lock()
-	delete(s.focusCtx, sig.ID)
-	s.focusCtxMu.Unlock()
+	return
 }
 
 // updateActivity updates the last activity timestamp
-func (s *Server) updateActivity() {
-	s.activityMu.Lock()
-	s.lastActivity = time.Now()
-	s.activityMu.Unlock()
-}
+func (s *Server) updateActivity() { _ = "STUB: not implemented"; return }
 
 // idleChecker monitors for idle timeout
-func (s *Server) idleChecker() {
-	defer s.wg.Done()
-
-	ticker := time.NewTicker(30 * time.Second)
-	defer ticker.Stop()
-
-	for {
-		select {
-		case <-ticker.C:
-			s.activityMu.Lock()
-			idle := time.Since(s.lastActivity)
-			s.activityMu.Unlock()
-
-			if idle >= s.idleTimeout {
-				log.Printf("[INFO] Idle timeout reached (%v), shutting down", s.idleTimeout)
-				s.mu.Lock()
-				if !s.shutdown {
-					s.shutdown = true
-					close(s.done)
-				}
-				s.mu.Unlock()
-				return
-			}
-
-		case <-s.done:
-			return
-		}
-	}
-}
+func (s *Server) idleChecker() { _ = "STUB: not implemented"; return }
 
 // Shutdown gracefully shuts down the server
-func (s *Server) Shutdown() error {
-	s.mu.Lock()
-	if s.shutdown {
-		s.mu.Unlock()
-		return nil
-	}
-	s.shutdown = true
-	close(s.done)
-	s.mu.Unlock()
+func (s *Server) Shutdown() error { _ = "STUB: not implemented"; return nil }
 
-	// Close listener
-	if s.listener != nil {
-		s.listener.Close()
-	}
+// Close listener
 
-	// Wait for goroutines with timeout
-	done := make(chan struct{})
-	go func() {
-		s.wg.Wait()
-		close(done)
-	}()
+// Wait for goroutines with timeout
 
-	select {
-	case <-done:
-	case <-time.After(5 * time.Second):
-		log.Printf("[WARN] Shutdown timeout, forcing exit")
-	}
+// Close notifier
 
-	// Close notifier
-	if s.notifier != nil {
-		s.notifier.Close()
-	}
+// Close D-Bus connection
 
-	// Close D-Bus connection
-	if s.conn != nil {
-		s.conn.Close()
-	}
-
-	// Clean up socket and PID files
-	os.Remove(GetSocketPath())
-	os.Remove(GetPidFilePath())
-
-	log.Printf("[INFO] Daemon stopped")
-	return nil
-}
+// Clean up socket and PID files
 
 // sendError sends an error response
-func (s *Server) sendError(conn net.Conn, msg string) {
-	resp := Response{Error: msg}
-	encoder := json.NewEncoder(conn)
-	if err := encoder.Encode(resp); err != nil {
-		log.Printf("[ERROR] Failed to send error response: %v", err)
-	}
-}
+func (s *Server) sendError(conn net.Conn, msg string) { _ = "STUB: not implemented"; return }

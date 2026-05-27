@@ -5,14 +5,7 @@
 package notifier
 
 import (
-	"fmt"
-	"os"
-	"path/filepath"
-
 	"github.com/777genius/claude-notifications/internal/config"
-	"github.com/777genius/claude-notifications/internal/daemon"
-	"github.com/777genius/claude-notifications/internal/logging"
-	"github.com/gen2brain/beeep"
 )
 
 // macOS stub functions - these are not used on Linux but required for compilation
@@ -20,96 +13,67 @@ import (
 // GetTerminalBundleID returns empty string on Linux
 // as terminal bundle IDs are a macOS-specific concept.
 func GetTerminalBundleID(configOverride string) string {
+	_ = "STUB: not implemented"
+
+	// GetTerminalNotifierPath returns an error on Linux
+	// as terminal-notifier is macOS-only.
 	return ""
 }
 
-// GetTerminalNotifierPath returns an error on Linux
-// as terminal-notifier is macOS-only.
-func GetTerminalNotifierPath() (string, error) {
-	return "", fmt.Errorf("terminal-notifier is only available on macOS")
-}
+func GetTerminalNotifierPath() (string, error) { _ = "STUB: not implemented"; return "", nil }
 
 // IsTerminalNotifierAvailable returns false on Linux.
 func IsTerminalNotifierAvailable() bool {
+	_ = "STUB: not implemented"
+
+	// EnsureClaudeNotificationsApp is a no-op on Linux.
 	return false
 }
 
-// EnsureClaudeNotificationsApp is a no-op on Linux.
 func EnsureClaudeNotificationsApp() error {
+	_ = "STUB: not implemented"
+
+	// sendLinuxNotification sends a notification on Linux.
+	// When clickToFocus is enabled, uses the daemon for click-to-focus support.
+	// Falls back to beeep when daemon is unavailable.
+	// cwd is the working directory of the project; used for window-specific focus. May be empty.
 	return nil
 }
 
-// sendLinuxNotification sends a notification on Linux.
-// When clickToFocus is enabled, uses the daemon for click-to-focus support.
-// Falls back to beeep when daemon is unavailable.
-// cwd is the working directory of the project; used for window-specific focus. May be empty.
 func sendLinuxNotification(title, body, appIcon string, cfg *config.Config, cwd string) error {
+	_ = "STUB: not implemented"
 	// If click-to-focus is disabled, use beeep directly
-	if !cfg.Notifications.Desktop.ClickToFocus {
-		logging.Debug("Click-to-focus disabled, using beeep directly")
-		return beeep.Notify(title, body, appIcon)
-	}
-
-	// Try to use daemon for click-to-focus
-	if err := sendViaDaemon(title, body, cwd); err == nil {
-		logging.Debug("Notification sent via daemon with click-to-focus support")
-		return nil
-	} else {
-		logging.Debug("Daemon not available (%v), falling back to beeep", err)
-	}
-
-	// Fallback to beeep (no click-to-focus)
-	return beeep.Notify(title, body, appIcon)
+	return nil
 }
+
+// Try to use daemon for click-to-focus
+
+// Fallback to beeep (no click-to-focus)
 
 // sendViaDaemon sends a notification via the background daemon.
 // Returns an error if daemon is not available or fails.
 // cwd is used to extract the project folder name for window-specific focus.
 func sendViaDaemon(title, body, cwd string) error {
+	_ = "STUB: not implemented"
 	// Start daemon on-demand (no-op if already running)
-	if !daemon.StartDaemonOnDemand() {
-		return daemon.ErrDaemonNotAvailable
-	}
-
-	// Create client and send notification
-	client, err := daemon.NewClient()
-	if err != nil {
-		return err
-	}
-
-	// Extract folder name from cwd for title-based window focus
-	folderName := ""
-	if cwd != "" {
-		folderName = filepath.Base(cwd)
-	}
-
-	// Send notification with 30 second timeout.
-	// Detect focus target in the hook process (not the daemon), since the daemon may
-	// have been started from a different environment.
-	focusTarget := daemon.GetTerminalName()
-	focusWindowID := daemon.GetX11WindowID()
-	focusWindowTitle := daemon.GetExactWindowTitle(focusTarget)
-	if sessionType := os.Getenv("XDG_SESSION_TYPE"); sessionType != "" && sessionType != "x11" {
-		focusWindowID = ""
-	}
-
-	_, err = client.SendNotification(title, body, focusTarget, folderName, focusWindowID, focusWindowTitle, 30)
-	return err
+	return nil
 }
+
+// Create client and send notification
+
+// Extract folder name from cwd for title-based window focus
+
+// Send notification with 30 second timeout.
+// Detect focus target in the hook process (not the daemon), since the daemon may
+// have been started from a different environment.
 
 // IsDaemonAvailable checks if the notification daemon is available and running.
 // Exported for testing and status checks.
-func IsDaemonAvailable() bool {
-	return daemon.IsDaemonRunning()
-}
+func IsDaemonAvailable() bool { _ = "STUB: not implemented"; return false }
 
 // StartDaemon starts the notification daemon on-demand.
 // Returns true if daemon started successfully or was already running.
-func StartDaemon() bool {
-	return daemon.StartDaemonOnDemand()
-}
+func StartDaemon() bool { _ = "STUB: not implemented"; return false }
 
 // StopDaemon stops the running notification daemon.
-func StopDaemon() error {
-	return daemon.StopDaemon()
-}
+func StopDaemon() error { _ = "STUB: not implemented"; return nil }
